@@ -22,29 +22,36 @@ function failsafe(fn: Function) {
 }
 
 class Extension {
-	keybindings: any;
 	private disable_actions: Array<Function>;
 
 	constructor() {
 	}
 
 	private init_keybindings() {
+		p("initializing keybindings");
 		const self = this;
 		var gsettings = new Settings.Keybindings().settings;
+		var valid_keys = gsettings.list_keys();
 
 		// Utility method that binds a callback to a named keypress-action.
 		function handle(name: string, func: Function) {
+			if (valid_keys.indexOf(name) === -1) {
+				// paranoia prevents a gnome shell crash
+				throw(new Error("invalid key binding: " + name));
+			}
 			var flags = Meta.KeyBindingFlags.NONE;
 
-			// API for 3.8+ only
+			p("binding key " + name);
+
 			var added = Main.wm.addKeybinding(
 				name,
 				gsettings,
 				flags,
 				Shell.ActionMode.NORMAL | Shell.ActionMode.MESSAGE_TRAY,
 				failsafe(func));
+
 			if(!added) {
-				throw("failed to add keybinding handler for: " + name);
+				throw(new Error("failed to add keybinding handler for: " + name));
 			}
 
 			self.disable_actions.push(function() {
@@ -71,7 +78,7 @@ class Extension {
 			self.disable_actions = [];
 			self.init_keybindings();
 			p("enabled");
-		});
+		})();
 	}
 
 	disable() {
@@ -87,7 +94,7 @@ class Extension {
 			});
 			self.disable_actions = [];
 			p("disabled");
-		});
+		})();
 	}
 }
 
