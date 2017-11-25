@@ -1,0 +1,6 @@
+#!bash -eux
+mkdir -p compiled
+gup -u inputs
+glib-compile-schemas . --targetdir="compiled"
+mv compiled/gschemas.compiled "$1"
+rm -rf compiled
