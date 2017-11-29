@@ -1,5 +1,6 @@
 /// <reference path="common.ts" />
 /// <reference path="extension_settings.ts" />
+/// <reference path="drawing.ts" />
 
 const Main = imports.ui.main;
 const Shell = imports.gi.Shell;
@@ -23,6 +24,7 @@ function failsafe(fn: Function) {
 
 class Extension {
 	private disable_actions: Array<Function>;
+	menu: Drawing.Menu;
 
 	constructor() {
 	}
@@ -65,11 +67,20 @@ class Extension {
 	}
 
 	private show_ui() {
+		if (this.menu != null) {
+			return;
+		}
 		p("showing UI")
+		this.menu = new Drawing.Menu();
+		Main.uiGroup.add_actor(menu.actor);
 	}
 
 	private hide_ui() {
 		p("hiding UI")
+		if (this.menu) {
+			Main.uiGroup.remove_actor(menu.actor);
+			this.menu = null;
+		}
 	}
 
 	enable() {
