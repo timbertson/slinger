@@ -2,12 +2,22 @@
 set -eu
 gup --always
 base="$(basename "$2" .js)"
-tsc "./src/$base".ts \
-		--alwaysStrict \
-		--noImplicitAny \
-		--noImplicitReturns \
-		--noImplicitThis \
-		--noUnusedParameters \
-		--noUnusedLocals \
-		--out "$1"
+if [ -f mode.sh ]; then
+	gup -u mode.sh
+	. mode.sh
+else
+	gup --ifcreate mode.sh
+fi
 
+if [ "${DEVELOPMENT:-}" = 1 ]; then
+	tsc "./src/$base".ts --out "$1"
+else
+	tsc "./src/$base".ts \
+			--alwaysStrict \
+			--noImplicitAny \
+			--noImplicitReturns \
+			--noImplicitThis \
+			--noUnusedParameters \
+			--noUnusedLocals \
+			--out "$1"
+fi

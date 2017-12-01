@@ -51,7 +51,8 @@ module Drawing {
 
 		constructor(menuSize: Point2d, origin: Point2d, canvas: any) {
 			const HALF : Point2d = Point.scale(0.5, menuSize);
-			const OUTER_RADIUS = Math.floor(menuSize.x / 2);
+			const BORDER_WIDTH = Math.floor(menuSize.x * 0.03);
+			const OUTER_RADIUS = Math.floor(menuSize.x / 2) - BORDER_WIDTH;
 			const MID_RADIUS = Math.floor(OUTER_RADIUS * 0.3);
 			const INNER_RADIUS = Math.floor(OUTER_RADIUS * 0.1);
 			const GAP_WIDTH = Math.floor(OUTER_RADIUS * 0.05);
@@ -59,8 +60,9 @@ module Drawing {
 			const EDGE_WIDTH = Math.floor(OUTER_RADIUS * 0.34);
 			const CORNER_WIDTH = Math.floor(OUTER_RADIUS * 0.4);
 			const CORNER_DISTANCE = Math.floor(OUTER_RADIUS * 0.8);
-			const DARK = { luminance: 0.5, alpha: 0.5 };
-			const LIGHT = { luminance: 0.8, alpha: 0.6 };
+			const DARK = { luminance: 0.05, alpha: 0.6 };
+			const LIGHT = { luminance: 0.2, alpha: 0.3 };
+			const BG = { luminance: 1, alpha: 0.2 };
 			const ACTIVE = { r: 0.1, g: 0.6, b: 0.8, a: 0.8 };
 
 			const ANGLE_HALF = PI;
@@ -96,6 +98,11 @@ module Drawing {
 				cr.restore();
 
 				// log("drawing! (radius = " + OUTER_RADIUS + ", selection = " + JSON.stringify(self.selection) + ")"); cr.save();
+				// border (/backing fill)
+				cr.arc(HALF.x, HALF.y, OUTER_RADIUS + BORDER_WIDTH, 0, TAO);
+				setGrey(cr, BG);
+				cr.fill();
+
 
 				cr.save();
 				cr.rectangle(0, 0, menuSize.x, menuSize.y);
@@ -115,17 +122,19 @@ module Drawing {
 				cr.rotate(ANGLE_SIXTEENTH);
 				cr.clip();
 
-				cr.arc(0, 0, OUTER_RADIUS, 0, TAO);
-				cr.clip();
-
 				// reset rotation
 				cr.rotate(PI);
 
+
 				// outer fill
-				cr.arc(0, 0, OUTER_RADIUS - ((OUTER_RADIUS - MID_RADIUS - GAP_WIDTH) / 2) - HALF_GAP_WIDTH, 0, TAO);
+				cr.arc(0, 0, OUTER_RADIUS - ((OUTER_RADIUS - MID_RADIUS) / 2), 0, TAO);
 				setGrey(cr, LIGHT);
-				cr.setLineWidth(OUTER_RADIUS - MID_RADIUS);
+				cr.setLineWidth(OUTER_RADIUS - MID_RADIUS - (GAP_WIDTH/2));
 				cr.stroke();
+
+				cr.arc(0, 0, OUTER_RADIUS, 0, TAO);
+				cr.clip();
+
 
 				// outer edge fills (top / left / right / bottom)
 				cr.setLineWidth(EDGE_WIDTH);
@@ -247,11 +256,11 @@ module Drawing {
 			actor.set_size(size.x, size.y);
 
 			const menu = new Clutter.Actor();
-			menu.set_background_color(new Clutter.Color({
+			actor.set_background_color(new Clutter.Color({
 				red: 128,
 				green: 128,
 				blue: 128,
-				alpha: 128
+				alpha: 255
 			}));
 			const menu_size: Point2d = { x: 200, y: 200 };
 			menu.set_size(menu_size.x, menu_size.y);
@@ -261,9 +270,7 @@ module Drawing {
 			menu.set_content(canvas);
 			actor.set_reactive(true);
 
-			actor.connect('button-press-event', function(_actor: any, event: any) {
-				const [x, y] = event.get_coords();
-				const menu_origin = { x, y };
+			function onPress(menu_origin: Point2d) {
 				const menu_position: Point2d = Point.subtract(menu_origin, Point.scale(0.5, menu_size));
 				menu.set_position(menu_position.x, menu_position.y);
 
@@ -273,7 +280,20 @@ module Drawing {
 
 				actor.add_child(menu);
 				canvas.invalidate();
+			}
+
+			actor.connect('button-press-event', function(_actor: any, event: any) {
+				const [x, y] = event.get_coords();
+				onPress({x, y});
+				function rand() { return Math.floor(Math.random() * 256); }
+				actor.set_background_color(new Clutter.Color({
+					red: rand(),
+					green: rand(),
+					blue: rand(),
+					alpha: 255
+				}));
 			});
+			onPress({x: 320, y: 320});
 		}
 	}
 }
