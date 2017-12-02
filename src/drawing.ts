@@ -1,9 +1,11 @@
 /// <reference path="common.ts" />
+/// <reference path="logging.ts" />
 module Drawing {
 	// const St = imports.gi.St;
 	// const Cogl = imports.gi.Cogl;
 	const Clutter = imports.gi.Clutter;
 	const Cairo = imports.cairo;
+	// const Shell = imports.gi.Shell;
 	const PI = Math.PI;
 	const TAO = 2 * PI;
 	interface Grey {
@@ -17,8 +19,30 @@ module Drawing {
 		a: number
 	}
 
+	enum Location {
+		LEFT = 0,
+		TOPLEFT,
+		TOP,
+		TOPRIGHT,
+		RIGHT,
+		BOTTOMRIGHT,
+		BOTTOM,
+		BOTTOMLEFT,
+	}
+
+	enum InnerSelection {
+		MAXIMIZE = 0,
+		MINIMIZE
+	}
+
+	enum Ring {
+		NONE = 0,
+		INNER,
+		OUTER
+	}
+
 	interface Selection {
-		ring: number
+		ring: Ring
 		index: number
 	}
 
@@ -42,6 +66,9 @@ module Drawing {
 		export function eq(a: Selection, b: Selection) {
 			return a.ring == b.ring && a.index == b.index;
 		}
+		export function eqTo(a: Selection, ring: Ring, location: number) {
+			return a.ring == ring && a.index == location;
+		}
 	}
 
 	class MenuHandlers {
@@ -61,7 +88,7 @@ module Drawing {
 			const CORNER_WIDTH = Math.floor(OUTER_RADIUS * 0.4);
 			const CORNER_DISTANCE = Math.floor(OUTER_RADIUS * 0.8);
 			const DARK = { luminance: 0.05, alpha: 0.6 };
-			const LIGHT = { luminance: 0.2, alpha: 0.3 };
+			const LIGHT = { luminance: 0.8, alpha: 0.2 };
 			const BG = { luminance: 1, alpha: 0.2 };
 			const ACTIVE = { r: 0.1, g: 0.6, b: 0.8, a: 0.8 };
 
@@ -81,12 +108,21 @@ module Drawing {
 			function setColor(cr: any, c: Color) {
 				cr.setSourceRGBA(c.r, c.g, c.b, c.a);
 			}
-			function activeColor(cr: any, selection: Selection, item: Selection) {
-				if (Selection.eq(selection, item)) {
+
+			function activeColor(cr: any, selection: Selection, ring: Ring, location: number) {
+				if (Selection.eqTo(selection, ring, location)) {
 					setColor(cr, ACTIVE);
 				} else {
 					setGrey(cr, DARK);
 				}
+			}
+
+			function activeColorInner(cr: any, selection: Selection, location: InnerSelection) {
+				activeColor(cr, selection, Ring.INNER, location)
+			}
+
+			function activeColorOuter(cr: any, selection: Selection, location: Location) {
+				activeColor(cr, selection, Ring.OUTER, location)
 			}
 
 			this.draw = function draw(_canvas: any, cr: any, _width: number, _height: number) {
@@ -141,40 +177,40 @@ module Drawing {
 
 				// right edge
 				cr.arc(0, 0, OUTER_RADIUS - (EDGE_WIDTH/2), -ANGLE_SIXTEENTH, ANGLE_SIXTEENTH);
-				activeColor(cr, selection, { ring: 2, index: 4 });
+				activeColorOuter(cr, selection, Location.RIGHT);
 				cr.stroke();
 
 				// left edge
 				cr.arc(0, 0, OUTER_RADIUS - (EDGE_WIDTH/2), ANGLE_HALF - ANGLE_SIXTEENTH, ANGLE_HALF + ANGLE_SIXTEENTH);
-				activeColor(cr, selection, { ring: 2, index: 0 });
+				activeColorOuter(cr, selection, Location.LEFT);
 				cr.stroke();
 
 				// bottom edge
 				cr.arc(0, 0, OUTER_RADIUS - (EDGE_WIDTH/2), ANGLE_QUARTER - ANGLE_SIXTEENTH, ANGLE_QUARTER + ANGLE_SIXTEENTH);
-				activeColor(cr, selection, { ring: 2, index: 6 });
+				activeColorOuter(cr, selection, Location.BOTTOM);
 				cr.stroke();
 
 				// top edge
 				cr.arc(0, 0, OUTER_RADIUS - (EDGE_WIDTH/2), -ANGLE_QUARTER - ANGLE_SIXTEENTH, -ANGLE_QUARTER + ANGLE_SIXTEENTH);
-				activeColor(cr, selection, { ring: 2, index: 2 });
+				activeColorOuter(cr, selection, Location.TOP);
 				cr.stroke();
 
 
 				// corner shades:
 				cr.arc(CORNER_DISTANCE, CORNER_DISTANCE, CORNER_WIDTH, 0, TAO);
-				activeColor(cr, selection, { ring: 2, index: 5 });
+				activeColorOuter(cr, selection, Location.BOTTOMRIGHT);
 				cr.fill();
 
 				cr.arc(-CORNER_DISTANCE, CORNER_DISTANCE, CORNER_WIDTH, 0, TAO);
-				activeColor(cr, selection, { ring: 2, index: 7 });
+				activeColorOuter(cr, selection, Location.BOTTOMLEFT);
 				cr.fill();
 
 				cr.arc(-CORNER_DISTANCE, -CORNER_DISTANCE, CORNER_WIDTH, 0, TAO);
-				activeColor(cr, selection, { ring: 2, index: 1 });
+				activeColorOuter(cr, selection, Location.TOPLEFT);
 				cr.fill();
 
 				cr.arc(CORNER_DISTANCE, -CORNER_DISTANCE, CORNER_WIDTH, 0, TAO);
-				activeColor(cr, selection, { ring: 2, index: 3 });
+				activeColorOuter(cr, selection, Location.TOPRIGHT);
 				cr.fill();
 
 				// mid buttons:
@@ -189,20 +225,20 @@ module Drawing {
 				cr.stroke();
 
 				cr.arc(0, 0, MID_RADIUS - ((MID_RADIUS - INNER_RADIUS) / 2) - HALF_GAP_WIDTH, PI, TAO);
-				activeColor(cr, selection, { ring: 1, index: 0 });
+				activeColorInner(cr, selection, InnerSelection.MAXIMIZE);
 				cr.stroke();
 
 				cr.arc(0, 0, MID_RADIUS - ((MID_RADIUS - INNER_RADIUS) / 2) - HALF_GAP_WIDTH, 0, PI);
-				activeColor(cr, selection, { ring: 1, index: 1 });
+				activeColorInner(cr, selection, InnerSelection.MINIMIZE);
 				cr.stroke();
 
 				cr.restore();
-				return false;
+				return Clutter.EVENT_STOP;
 			}
 
 			function updateSelection(newSelection: Selection) {
-				log("updateSelection(" + JSON.stringify(newSelection) + ")");
 				if (!Selection.eq(self.selection, newSelection)) {
+					p("updateSelection(" + JSON.stringify(newSelection) + ")");
 					self.selection = newSelection;
 					canvas.invalidate();
 				}
@@ -220,9 +256,8 @@ module Drawing {
 
 			this.onMouseMove = function(_actor: any, event: any) {
 				const [absx,absy] = event.get_coords();
-				const mousePos = Point.subtract({x: absx, y: absy}, origin);
-				const { x, y } = mousePos;
-				log(JSON.stringify(mousePos));
+				const x = absx - origin.x;
+				const y = absy - origin.y;
 
 				const radius = Math.sqrt(Math.pow(x,2) + Math.pow(y,2));
 				const angle = Math.atan2(y, x);
@@ -242,61 +277,103 @@ module Drawing {
 						index: outerIndex(angle),
 					});
 				}
+				return Clutter.EVENT_STOP;
 			}
 		}
 	}
 
-	export class Menu {
-		actor: any;
-		canvas: any;
-		selected: Selection;
+	// class LayoutPreview {
+	// 	bounds: Rect
+	// 	preview: Rect
+	// 	constructor(bounds: Point2d) {
+	// 	}
+  //
+	// 	setSelection(sel: Selection) {
+  //
+	// 	}
+	// }
 
-		constructor(size: Point2d, _center: Point2d) {
-			const actor = this.actor = new Clutter.Actor();
-			actor.set_size(size.x, size.y);
+	export class Menu {
+		ui: any;
+		private parent: any;
+		// private selected: Selection;
+
+		constructor(parent: any, screen: Rect, origin: Point2d) {
+			p("creating menu at " + JSON.stringify(origin) + " with bounds " + JSON.stringify(screen));
+			const self = this;
+			this.parent = parent;
+			const backgroundActor = new Clutter.Actor();
+			backgroundActor.set_size(screen.size.x, screen.size.y);
 
 			const menu = new Clutter.Actor();
-			actor.set_background_color(new Clutter.Color({
-				red: 128,
-				green: 128,
-				blue: 128,
-				alpha: 255
-			}));
-			const menu_size: Point2d = { x: 200, y: 200 };
-			menu.set_size(menu_size.x, menu_size.y);
 
-			const canvas = this.canvas = new Clutter.Canvas();
-			canvas.set_size(menu_size.x, menu_size.y);
+			const menuSize: Point2d = { x: 200, y: 200 };
+			menu.set_size(menuSize.x, menuSize.y);
+
+			const canvas = new Clutter.Canvas();
+			canvas.set_size(menuSize.x, menuSize.y);
 			menu.set_content(canvas);
-			actor.set_reactive(true);
 
-			function onPress(menu_origin: Point2d) {
-				const menu_position: Point2d = Point.subtract(menu_origin, Point.scale(0.5, menu_size));
-				menu.set_position(menu_position.x, menu_position.y);
+			const position: Point2d = Point.subtract(Point.subtract(origin, screen.pos), Point.scale(0.5, menuSize));
+			menu.set_position(position.x, position.y);
 
-				const handlers = new MenuHandlers(menu_size, menu_origin, canvas);
-				canvas.connect('draw', handlers.draw);
-				actor.connect('motion-event', handlers.onMouseMove);
+			const handlers = new MenuHandlers(menuSize, origin, canvas);
+			canvas.connect('draw', handlers.draw);
+			backgroundActor.connect('motion-event', handlers.onMouseMove);
 
-				actor.add_child(menu);
-				canvas.invalidate();
-			}
-
-			actor.connect('button-press-event', function(_actor: any, event: any) {
-				const [x, y] = event.get_coords();
-				onPress({x, y});
-				function rand() { return Math.floor(Math.random() * 256); }
-				actor.set_background_color(new Clutter.Color({
-					red: rand(),
-					green: rand(),
-					blue: rand(),
-					alpha: 255
-				}));
+			// XXX shouldn't be necessary. Take grab?
+			backgroundActor.connect('button-press-event', function() {
+				backgroundActor.grab_key_focus();
 			});
-			onPress({x: 320, y: 320});
+
+			Clutter.grab_pointer(backgroundActor);
+			Clutter.grab_keyboard(backgroundActor);
+
+			backgroundActor.connect('key-press-event', function(_actor: any, event: any) {
+				p('keypress: ' + event.get_key_code());
+				if (event.get_key_code() == 9) {
+					self.destroy();
+					return Clutter.EVENT_STOP;
+				}
+			});
+
+			const coverPane = new Clutter.Actor({ reactive: true });
+			coverPane.set_reactive(true);
+			// coverPane.set_size(screen.size.x, screen.size.y);
+	// coverPane.set_background_color(new Clutter.Color({
+	// 	red: 255,
+	// 	green: 128,
+	// 	blue: 128,
+	// 	alpha: 255
+	// }));
+			coverPane.connect('event', function () {
+				p("catching event..");
+				return Clutter.EVENT_STOP;
+			});
+
+			this.ui = coverPane;
+			backgroundActor.set_reactive(true);
+			backgroundActor.add_actor(menu);
+			coverPane.add_actor(backgroundActor);
+
+			this.parent.insert_child_above(this.ui, null);
+			backgroundActor.grab_key_focus();
+			canvas.invalidate();
+		}
+
+		destroy() {
+			p("hiding menu")
+			if (this.displayed()) {
+				Clutter.ungrab_pointer();
+				Clutter.ungrab_keyboard();
+				this.parent.remove_child(this.ui);
+				this.parent = null;
+			}
+		}
+
+		private displayed() {
+			return (this.parent !== null);
 		}
 	}
 }
-
-
 

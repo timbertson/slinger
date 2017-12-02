@@ -1,2 +1,2 @@
 #!bash -eu
-gup -u schemas/all extension/extension_impl.js
+gup -u schemas/all extension/extension_impl.js extension/clutter_test.js

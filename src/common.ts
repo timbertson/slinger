@@ -1,5 +1,5 @@
 declare var imports: any;
-declare var log: Function;
+declare var log: {(m: any):void};
 
 interface Point2d {
 	x: number
@@ -11,3 +11,9 @@ interface Rect {
 	size: Point2d
 }
 
+interface MetaRect {
+	x: number
+	y: number
+	width: number
+	height: number
+}

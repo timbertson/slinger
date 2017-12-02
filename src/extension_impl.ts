@@ -1,21 +1,24 @@
 /// <reference path="common.ts" />
 /// <reference path="extension_settings.ts" />
 /// <reference path="drawing.ts" />
+/// <reference path="logging.ts" />
 
 const Main = imports.ui.main;
 const Shell = imports.gi.Shell;
 const Meta = imports.gi.Meta;
+const Gdk = imports.gi.Gdk;
+const Clutter = imports.gi.Clutter;
 
-declare var log: {(m: String):void};
-
-function p(msg: String) {
-	log('[throwy]:' + msg);
+interface Global {
+	screen: any
+	window_group: any
 }
+declare var global: Global;
 
 function failsafe(fn: Function) {
-	return function() {
+	return function(this: any) {
 		try {
-			fn()
+			fn.apply(this, arguments)
 		} catch(e) {
 			p('Error: ' + e);
 		}
@@ -49,7 +52,7 @@ class Extension {
 				name,
 				gsettings,
 				flags,
-				Shell.ActionMode.NORMAL | Shell.ActionMode.MESSAGE_TRAY,
+				Shell.ActionMode.NORMAL,
 				failsafe(func));
 
 			if(!added) {
@@ -63,23 +66,53 @@ class Extension {
 		};
 
 		p("adding keyboard handlers for throwy");
-		handle('throwy-show', self.show_ui);
+		handle('throwy-show', self.show_ui.bind(this));
 	}
 
-	private show_ui() {
-		if (this.menu != null) {
-			return;
-		}
+	private show_ui(a:any, b: any, c: any, d: any) {
+		p(a);
+		p(b);
+		p(c);
+		p(d);
+		const self = this;
+		this.hide_ui();
 		p("showing UI")
-		this.menu = new Drawing.Menu();
-		Main.uiGroup.add_actor(menu.actor);
+
+		const display = Gdk.Display.get_default();
+		const pointer = display.get_device_manager().get_client_pointer();
+		const mousePos = pointer.get_position();
+		const screenIdx = mousePos[0];
+
+		// const monitorIdx = global.screen.get_primary_monitor();
+		const screen: MetaRect = global.screen.get_workspace_by_index(0).get_work_area_for_monitor(screenIdx);
+		const pos: Point2d = {
+			x: screen.x,
+			y: screen.y
+		};
+		const size: Point2d = {
+			x: screen.width,
+			y: screen.height
+		};
+
+		this.menu = new Drawing.Menu(global.window_group, { size, pos }, { x: mousePos[1], y: mousePos[2]}); this.menu.ui.set_position(pos.x, pos.y);
+		Main.pushModal(this.menu.ui);
+		this.menu.ui.connect('unrealize', function() {
+			p("hiding modal");
+			Main.popModal(self.menu.ui);
+			self.menu = null;
+			return Clutter.EVENT_PROPAGATE;
+		});
+// this.menu.ui.set_background_color(new Clutter.Color({
+// 	red: 40,
+// 	green: 40,
+// 	blue: 40,
+// 	alpha: 20
+// }));
 	}
 
 	private hide_ui() {
-		p("hiding UI")
 		if (this.menu) {
-			Main.uiGroup.remove_actor(menu.actor);
-			this.menu = null;
+			this.menu.destroy();
 		}
 	}
 
