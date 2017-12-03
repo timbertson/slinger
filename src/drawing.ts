@@ -8,6 +8,8 @@ module Drawing {
 	// const Shell = imports.gi.Shell;
 	const PI = Math.PI;
 	const TAO = 2 * PI;
+	const floor = Math.floor;
+
 	interface Grey {
 		luminance: number
 		alpha: number
@@ -19,7 +21,13 @@ module Drawing {
 		a: number
 	}
 
-	enum Location {
+	export const enum Action {
+		CANCEL,
+		MINIMIZE,
+		RESIZE
+	}
+
+	const enum Location {
 		LEFT = 0,
 		TOPLEFT,
 		TOP,
@@ -30,15 +38,20 @@ module Drawing {
 		BOTTOMLEFT,
 	}
 
-	enum InnerSelection {
+	const enum InnerSelection {
 		MAXIMIZE = 0,
 		MINIMIZE
 	}
 
-	enum Ring {
+	const enum Ring {
 		NONE = 0,
 		INNER,
 		OUTER
+	}
+
+	const enum Axis {
+		x = 'x',
+		y = 'y'
 	}
 
 	interface Selection {
@@ -47,18 +60,45 @@ module Drawing {
 	}
 
 	module Point {
-		export function scale(scale: number, p: Point2d): Point2d {
+		export function scale(scale: Point, p: Point): Point {
 			return {
-				x: Math.floor(p.x * scale),
-				y: Math.floor(p.y * scale)
+				x: floor(p.x * scale.x),
+				y: floor(p.y * scale.y)
 			}
 		}
 
-		export function subtract(a: Point2d, b: Point2d): Point2d {
+		export function scaleConstant(scale: number, p: Point): Point {
+			return {
+				x: floor(p.x * scale),
+				y: floor(p.y * scale)
+			}
+		}
+
+		export function copy(p: Point): Point {
+			return { x: p.x, y: p.y };
+		}
+
+		export function scaleAxis(axis: Axis, scale: number, p: Point): Point {
+			const ret = copy(p);
+			ret[axis] = floor(p[axis] * scale);
+			return ret;
+		}
+
+		export function subtract(a: Point, b: Point): Point {
 			return {
 				x: a.x - b.x,
 				y: a.y- b.y
 			}
+		}
+
+		export function zero(): Point {
+			return { x: 0, y: 0 };
+		}
+	}
+
+	module Rect {
+		export function copy(r: Rect): Rect {
+			return { pos: Point.copy(r.pos), size: Point.copy(r.size) };
 		}
 	}
 
@@ -71,26 +111,36 @@ module Drawing {
 		}
 	}
 
+	function floatColor(c: Color): Color {
+		return {
+			r: c.r / 255,
+			g: c.g / 255,
+			b: c.b / 255,
+			a: c.a / 255,
+		}
+	}
+
 	class MenuHandlers {
 		draw: Function;
 		onMouseMove: Function;
-		selection: Selection;
+		private selection: Selection;
 
-		constructor(menuSize: Point2d, origin: Point2d, canvas: any) {
-			const HALF : Point2d = Point.scale(0.5, menuSize);
-			const BORDER_WIDTH = Math.floor(menuSize.x * 0.03);
-			const OUTER_RADIUS = Math.floor(menuSize.x / 2) - BORDER_WIDTH;
-			const MID_RADIUS = Math.floor(OUTER_RADIUS * 0.3);
-			const INNER_RADIUS = Math.floor(OUTER_RADIUS * 0.1);
-			const GAP_WIDTH = Math.floor(OUTER_RADIUS * 0.05);
-			const HALF_GAP_WIDTH = Math.floor(GAP_WIDTH / 2);
-			const EDGE_WIDTH = Math.floor(OUTER_RADIUS * 0.34);
-			const CORNER_WIDTH = Math.floor(OUTER_RADIUS * 0.4);
-			const CORNER_DISTANCE = Math.floor(OUTER_RADIUS * 0.8);
-			const DARK = { luminance: 0.05, alpha: 0.6 };
-			const LIGHT = { luminance: 0.8, alpha: 0.2 };
-			const BG = { luminance: 1, alpha: 0.2 };
-			const ACTIVE = { r: 0.1, g: 0.6, b: 0.8, a: 0.8 };
+		constructor(menuSize: Point, origin: Point, canvas: any, preview: LayoutPreview) {
+			const HALF : Point = Point.scaleConstant(0.5, menuSize);
+			const BORDER_WIDTH = floor(menuSize.x * 0.03);
+			const OUTER_RADIUS = floor(menuSize.x / 2) - BORDER_WIDTH;
+			const MID_RADIUS = floor(OUTER_RADIUS * 0.3);
+			const INNER_RADIUS = floor(OUTER_RADIUS * 0.1);
+			const GAP_WIDTH = floor(OUTER_RADIUS * 0.05);
+			const HALF_GAP_WIDTH = floor(GAP_WIDTH / 2);
+			const EDGE_WIDTH = floor(OUTER_RADIUS * 0.34);
+			const CORNER_WIDTH = floor(OUTER_RADIUS * 0.4);
+			const CORNER_DISTANCE = floor(OUTER_RADIUS * 0.8);
+			const DARK = floatColor({ r: 18, g: 36, b: 48, a: 200 });
+			const LIGHT = floatColor({ r: 66, g: 79, b: 92, a: 237 });
+			const BG = { luminance: 0.7, alpha: 0.7 };
+			// const ACTIVE = floatColor({ r: 123, g: 189, b: 226, a: 255 });
+			const ACTIVE = floatColor({ r: 45, g: 155, b: 203, a: 255 });
 
 			const ANGLE_HALF = PI;
 			const ANGLE_QUARTER = ANGLE_HALF / 2;
@@ -113,7 +163,7 @@ module Drawing {
 				if (Selection.eqTo(selection, ring, location)) {
 					setColor(cr, ACTIVE);
 				} else {
-					setGrey(cr, DARK);
+					setColor(cr, DARK);
 				}
 			}
 
@@ -164,7 +214,7 @@ module Drawing {
 
 				// outer fill
 				cr.arc(0, 0, OUTER_RADIUS - ((OUTER_RADIUS - MID_RADIUS) / 2), 0, TAO);
-				setGrey(cr, LIGHT);
+				setColor(cr, LIGHT);
 				cr.setLineWidth(OUTER_RADIUS - MID_RADIUS - (GAP_WIDTH/2));
 				cr.stroke();
 
@@ -221,7 +271,7 @@ module Drawing {
 
 				cr.setLineWidth(MID_RADIUS - INNER_RADIUS - HALF_GAP_WIDTH);
 				cr.arc(0, 0, MID_RADIUS - ((MID_RADIUS - INNER_RADIUS) / 2) - HALF_GAP_WIDTH, 0, TAO);
-				setGrey(cr, LIGHT);
+				setColor(cr, LIGHT);
 				cr.stroke();
 
 				cr.arc(0, 0, MID_RADIUS - ((MID_RADIUS - INNER_RADIUS) / 2) - HALF_GAP_WIDTH, PI, TAO);
@@ -241,13 +291,14 @@ module Drawing {
 					p("updateSelection(" + JSON.stringify(newSelection) + ")");
 					self.selection = newSelection;
 					canvas.invalidate();
+					preview.updateSelection(newSelection);
 				}
 			}
 
 			function circularIndex(sections: number, offset: number) {
 				const span = TAO / sections;
 				return function(angle: number) {
-					return Math.floor((angle + PI + offset) / span) % sections;
+					return floor((angle + PI + offset) / span) % sections;
 				}
 			}
 
@@ -268,56 +319,172 @@ module Drawing {
 					updateSelection(UNSELECTED);
 				} else if (radius < MID_RADIUS) {
 					updateSelection({
-						ring: 1,
+						ring: Ring.INNER,
 						index: innerIndex(angle),
 					});
 				} else {
 					updateSelection({
-						ring: 2,
+						ring: Ring.OUTER,
 						index: outerIndex(angle),
 					});
 				}
 				return Clutter.EVENT_STOP;
 			}
 		}
+
+		getSelection(): Selection {
+			return this.selection;
+		}
 	}
 
-	// class LayoutPreview {
-	// 	bounds: Rect
-	// 	preview: Rect
-	// 	constructor(bounds: Point2d) {
-	// 	}
-  //
-	// 	setSelection(sel: Selection) {
-  //
-	// 	}
-	// }
+	class LayoutPreview {
+		private size: Point
+		private base: Rect
+		private preview: Rect
+		ui: any
+		constructor(size: Point) {
+			this.size = size
+			this.ui = new Clutter.Actor();
+			this.ui.set_background_color(new Clutter.Color({
+				red: 80,
+				green: 158,
+				blue: 255,
+				alpha: 125
+			}));
+			this.ui.hide();
+		}
+
+		private selectOuter(loc: Location): Rect {
+			switch (loc) {
+				case Location.LEFT:
+					return {
+						pos: Point.zero(),
+						size: Point.scale({ x: 0.5, y: 1 }, this.size),
+					}
+				case Location.TOPLEFT:
+					return {
+						pos: Point.zero(),
+						size: Point.scaleConstant(0.5, this.size),
+					}
+				case Location.TOP:
+					return {
+						pos: Point.zero(),
+						size: Point.scale({ x: 1, y: 0.5 }, this.size),
+					}
+				case Location.TOPRIGHT:
+					return {
+						pos: Point.scale({ x: 0.5, y: 0 }, this.size),
+						size: Point.scaleConstant(0.5, this.size),
+					}
+				case Location.RIGHT:
+					return {
+						pos: Point.scale({ x: 0.5, y: 0 }, this.size),
+						size: Point.scale({ x: 0.5, y: 1 }, this.size),
+					}
+				case Location.BOTTOMRIGHT:
+					return {
+						pos: Point.scaleConstant(0.5, this.size),
+						size: Point.scaleConstant(0.5, this.size),
+					}
+				case Location.BOTTOM:
+					return {
+						pos: Point.scale({ x: 0, y: 0.5 }, this.size),
+						size: Point.scale({ x: 1, y: 0.5 }, this.size),
+					}
+				case Location.BOTTOMLEFT:
+					return {
+						pos: Point.scale({ x: 0, y: 0.5}, this.size),
+						size: Point.scaleConstant(0.5, this.size),
+					}
+			}
+			return null;
+		}
+
+		private selectInner(sel: InnerSelection): Rect {
+			switch (sel) {
+				case InnerSelection.MAXIMIZE:
+					return {
+						pos: Point.zero(),
+						size: this.size,
+					}
+
+				case InnerSelection.MINIMIZE:
+				default:
+					return null;
+			}
+		}
+
+		updateSelection(sel: Selection) {
+			switch (sel.ring) {
+				case Ring.OUTER:
+					this.base = this.selectOuter(sel.index);
+				break;
+
+				case Ring.INNER:
+					this.base = this.selectInner(sel.index);
+				break;
+
+				case Ring.NONE:
+				default:
+					this.base = null;
+				break;
+			}
+			this.resetPreview();
+		}
+
+		private updateUi() {
+			if (this.preview == null) {
+				this.ui.hide();
+			} else {
+				this.ui.set_position(this.preview.pos.x, this.preview.pos.y);
+				this.ui.set_size(this.preview.size.x, this.preview.size.y);
+				this.ui.show();
+			}
+		}
+
+		private resetPreview() {
+			if (this.base == null) {
+				this.preview = null;
+			} else {
+				this.preview = Rect.copy(this.base);
+			}
+			this.updateUi();
+		}
+
+		getRect():Rect { return this.preview; }
+	}
+
+	type FunctionActionRectVoid = (action:Action, rect:Rect) => void
 
 	export class Menu {
 		ui: any;
 		private parent: any;
-		// private selected: Selection;
+		private preview: LayoutPreview;
+		private onSelect: FunctionActionRectVoid;
+		private menuHandlers: MenuHandlers;
 
-		constructor(parent: any, screen: Rect, origin: Point2d) {
+		constructor(parent: any, screen: Rect, origin: Point, onSelect: FunctionActionRectVoid) {
 			p("creating menu at " + JSON.stringify(origin) + " with bounds " + JSON.stringify(screen));
 			const self = this;
 			this.parent = parent;
+			this.onSelect = onSelect;
 			const backgroundActor = new Clutter.Actor();
 			backgroundActor.set_size(screen.size.x, screen.size.y);
 
 			const menu = new Clutter.Actor();
 
-			const menuSize: Point2d = { x: 200, y: 200 };
+			const menuSize: Point = { x: 200, y: 200 };
 			menu.set_size(menuSize.x, menuSize.y);
 
 			const canvas = new Clutter.Canvas();
 			canvas.set_size(menuSize.x, menuSize.y);
 			menu.set_content(canvas);
 
-			const position: Point2d = Point.subtract(Point.subtract(origin, screen.pos), Point.scale(0.5, menuSize));
+			const position: Point = Point.subtract(Point.subtract(origin, screen.pos), Point.scaleConstant(0.5, menuSize));
 			menu.set_position(position.x, position.y);
 
-			const handlers = new MenuHandlers(menuSize, origin, canvas);
+			const preview = this.preview = new LayoutPreview(screen.size);
+			const handlers = this.menuHandlers = new MenuHandlers(menuSize, origin, canvas, preview);
 			canvas.connect('draw', handlers.draw);
 			backgroundActor.connect('motion-event', handlers.onMouseMove);
 
@@ -332,20 +499,17 @@ module Drawing {
 			backgroundActor.connect('key-press-event', function(_actor: any, event: any) {
 				p('keypress: ' + event.get_key_code());
 				if (event.get_key_code() == 9) {
-					self.destroy();
+					self.complete(false);
 					return Clutter.EVENT_STOP;
 				}
+			});
+			backgroundActor.connect('button-press-event', function() {
+				self.complete(true);
+				return Clutter.EVENT_STOP;
 			});
 
 			const coverPane = new Clutter.Actor({ reactive: true });
 			coverPane.set_reactive(true);
-			// coverPane.set_size(screen.size.x, screen.size.y);
-	// coverPane.set_background_color(new Clutter.Color({
-	// 	red: 255,
-	// 	green: 128,
-	// 	blue: 128,
-	// 	alpha: 255
-	// }));
 			coverPane.connect('event', function () {
 				p("catching event..");
 				return Clutter.EVENT_STOP;
@@ -354,6 +518,7 @@ module Drawing {
 			this.ui = coverPane;
 			backgroundActor.set_reactive(true);
 			backgroundActor.add_actor(menu);
+			coverPane.add_actor(this.preview.ui);
 			coverPane.add_actor(backgroundActor);
 
 			this.parent.insert_child_above(this.ui, null);
@@ -369,6 +534,23 @@ module Drawing {
 				this.parent.remove_child(this.ui);
 				this.parent = null;
 			}
+		}
+
+		private complete(accept: boolean) {
+			if (!accept) {
+				this.onSelect(Action.CANCEL, null);
+			} else {
+				const selection = this.menuHandlers.getSelection();
+				if (Selection.eq({ ring: Ring.INNER, index: InnerSelection.MINIMIZE }, selection)) {
+					this.onSelect(Action.MINIMIZE, null);
+				} else {
+					const rect = this.preview.getRect()
+					if (rect !== null) {
+						this.onSelect(Action.RESIZE, rect);
+					}
+				}
+			}
+			this.destroy();
 		}
 
 		private displayed() {

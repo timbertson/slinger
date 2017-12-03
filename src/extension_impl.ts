@@ -12,6 +12,7 @@ const Clutter = imports.gi.Clutter;
 interface Global {
 	screen: any
 	window_group: any
+	get_current_time: () => number
 }
 declare var global: Global;
 
@@ -74,27 +75,38 @@ class Extension {
 		p(b);
 		p(c);
 		p(d);
-		const self = this;
 		this.hide_ui();
-		p("showing UI")
-
 		const display = Gdk.Display.get_default();
+		const window: MetaWindow = global.screen.get_display()['focus-window'];
+		if(!window) {
+			p("no active window; ignoring")
+			return;
+		}
+		p("showing UI")
+		const self = this;
+
 		const pointer = display.get_device_manager().get_client_pointer();
 		const mousePos = pointer.get_position();
 		const screenIdx = mousePos[0];
 
 		// const monitorIdx = global.screen.get_primary_monitor();
 		const screen: MetaRect = global.screen.get_workspace_by_index(0).get_work_area_for_monitor(screenIdx);
-		const pos: Point2d = {
+		const pos: Point = {
 			x: screen.x,
 			y: screen.y
 		};
-		const size: Point2d = {
+		const size: Point = {
 			x: screen.width,
 			y: screen.height
 		};
 
-		this.menu = new Drawing.Menu(global.window_group, { size, pos }, { x: mousePos[1], y: mousePos[2]}); this.menu.ui.set_position(pos.x, pos.y);
+		this.menu = new Drawing.Menu(
+			global.window_group,
+			{ size, pos },
+			{ x: mousePos[1], y: mousePos[2]},
+			this.onLayoutSelect(window, pos)
+		);
+		this.menu.ui.set_position(pos.x, pos.y);
 		Main.pushModal(this.menu.ui);
 		this.menu.ui.connect('unrealize', function() {
 			p("hiding modal");
@@ -113,6 +125,30 @@ class Extension {
 	private hide_ui() {
 		if (this.menu) {
 			this.menu.destroy();
+		}
+	}
+
+	onLayoutSelect(window: MetaWindow, offset: Point) {
+		return function(action: Drawing.Action, rect: Rect) {
+			switch (action) {
+				case Drawing.Action.MINIMIZE:
+					window.minimize();
+				break;
+				
+				case Drawing.Action.RESIZE:
+					if(window.get_maximized() !== 0) {
+						window.unmaximize(Meta.MaximizeFlags.VERTICAL | Meta.MaximizeFlags.HORIZONTAL);
+					}
+
+					window.move_resize_frame(true,
+						rect.pos.x + offset.x,
+						rect.pos.y + offset.y,
+						rect.size.x,
+						rect.size.y);
+				case Drawing.Action.CANCEL: // fallthrough
+					Main.activateWindow(window, global.get_current_time());
+				break;
+			}
 		}
 	}
 
