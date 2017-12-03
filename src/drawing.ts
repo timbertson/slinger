@@ -21,6 +21,10 @@ module Drawing {
 		a: number
 	}
 
+	interface MouseTracker {
+		onMouseMove(event: any): void
+	}
+
 	export const enum Action {
 		CANCEL,
 		MINIMIZE,
@@ -36,6 +40,24 @@ module Drawing {
 		BOTTOMRIGHT,
 		BOTTOM,
 		BOTTOMLEFT,
+	}
+
+	function stringOfLocation(loc: Location): string {
+		switch(loc) {
+			case Location.LEFT: return 'LEFT';
+			case Location.TOPLEFT: return 'TOPLEFT';
+			case Location.TOP: return 'TOP';
+			case Location.TOPRIGHT: return 'TOPRIGHT';
+			case Location.RIGHT: return 'RIGHT';
+			case Location.BOTTOMRIGHT: return 'BOTTOMRIGHT';
+			case Location.BOTTOM: return 'BOTTOM';
+			case Location.BOTTOMLEFT: return 'BOTTOMLEFT';
+			default: return '<unknown>';
+		}
+	}
+
+	export function oppose(loc: Location): Location {
+		return (loc + 4) % 8; // Magic!
 	}
 
 	const enum InnerSelection {
@@ -78,6 +100,13 @@ module Drawing {
 			return { x: p.x, y: p.y };
 		}
 
+		export function add(a: Point, b: Point): Point {
+			return {
+				x: a.x + b.x,
+				y: a.y + b.y
+			}
+		}
+
 		export function scaleAxis(axis: Axis, scale: number, p: Point): Point {
 			const ret = copy(p);
 			ret[axis] = floor(p[axis] * scale);
@@ -91,14 +120,46 @@ module Drawing {
 			}
 		}
 
-		export function zero(): Point {
-			return { x: 0, y: 0 };
+		export const ZERO = { x: 0, y: 0 };
+
+		export function ofEvent(event: any, origin: Point): Point {
+			const [absx,absy] = event.get_coords();
+			if (origin == null) {
+				return { x: absx, y: absy };
+			} else {
+				const x = absx - origin.x;
+				const y = absy - origin.y;
+				return { x, y };
+			}
 		}
 	}
 
 	module Rect {
 		export function copy(r: Rect): Rect {
 			return { pos: Point.copy(r.pos), size: Point.copy(r.size) };
+		}
+
+		export function clip(bounds: Rect, r: Rect) {
+			const { pos: bpos, size: bsize } = bounds;
+			const { pos, size } = r;
+			if (bpos.x <= pos.x
+				&& bpos.y <= pos.y
+				&& bsize.x >= size.x
+				&& bsize.y >= size.y
+			) {
+				return r;
+			} else {
+				return {
+					pos: {
+						x: Math.max(bpos.x, pos.x),
+						y: Math.max(bpos.y, pos.y),
+					},
+					size: {
+						x: Math.min(bsize.x, size.x),
+						y: Math.min(bsize.y, size.y),
+					}
+				};
+			}
 		}
 	}
 
@@ -120,12 +181,17 @@ module Drawing {
 		}
 	}
 
-	class MenuHandlers {
-		draw: Function;
-		onMouseMove: Function;
-		private selection: Selection;
+	class MenuHandlers implements MouseTracker {
+		draw: Function
+		onMouseMove: (event: any) => void
+		private origin: Point
+		private currentMouseRelative: Point
+		private selection: Selection
 
 		constructor(menuSize: Point, origin: Point, canvas: any, preview: LayoutPreview) {
+			this.currentMouseRelative = origin;
+			this.origin = origin;
+
 			const HALF : Point = Point.scaleConstant(0.5, menuSize);
 			const BORDER_WIDTH = floor(menuSize.x * 0.03);
 			const OUTER_RADIUS = floor(menuSize.x / 2) - BORDER_WIDTH;
@@ -305,11 +371,9 @@ module Drawing {
 			const innerIndex = circularIndex(2, 0);
 			const outerIndex = circularIndex(8, ANGLE_SIXTEENTH);
 
-			this.onMouseMove = function(_actor: any, event: any) {
-				const [absx,absy] = event.get_coords();
-				const x = absx - origin.x;
-				const y = absy - origin.y;
-
+			this.onMouseMove = function(event: any) {
+				const point = this.currentMouseRelative = Point.ofEvent(event, origin);
+				const { x, y } = point;
 				const radius = Math.sqrt(Math.pow(x,2) + Math.pow(y,2));
 				const angle = Math.atan2(y, x);
 				// log("radius = " + radius);
@@ -330,20 +394,30 @@ module Drawing {
 				}
 				return Clutter.EVENT_STOP;
 			}
+
 		}
 
 		getSelection(): Selection {
 			return this.selection;
 		}
+
+		getMousePosition(): Point {
+			return Point.add(this.origin, this.currentMouseRelative);
+		}
 	}
 
-	class LayoutPreview {
+	class LayoutPreview implements MouseTracker {
 		private size: Point
+		private bounds: Rect
 		private base: Rect
 		private preview: Rect
+		private selection: Selection;
 		ui: any
+		tracking: Location;
+		trackingOrigin: Point;
+
 		constructor(size: Point) {
-			this.size = size
+			this.size = size;
 			this.ui = new Clutter.Actor();
 			this.ui.set_background_color(new Clutter.Color({
 				red: 80,
@@ -351,50 +425,52 @@ module Drawing {
 				blue: 255,
 				alpha: 125
 			}));
+			this.tracking = null;
 			this.ui.hide();
 		}
 
 		private selectOuter(loc: Location): Rect {
+			const size = this.size;
 			switch (loc) {
 				case Location.LEFT:
 					return {
-						pos: Point.zero(),
-						size: Point.scale({ x: 0.5, y: 1 }, this.size),
+						pos: Point.ZERO,
+						size: Point.scale({ x: 0.5, y: 1 }, size),
 					}
 				case Location.TOPLEFT:
 					return {
-						pos: Point.zero(),
-						size: Point.scaleConstant(0.5, this.size),
+						pos: Point.ZERO,
+						size: Point.scaleConstant(0.5, size),
 					}
 				case Location.TOP:
 					return {
-						pos: Point.zero(),
-						size: Point.scale({ x: 1, y: 0.5 }, this.size),
+						pos: Point.ZERO,
+						size: Point.scale({ x: 1, y: 0.5 }, size),
 					}
 				case Location.TOPRIGHT:
 					return {
-						pos: Point.scale({ x: 0.5, y: 0 }, this.size),
-						size: Point.scaleConstant(0.5, this.size),
+						pos: Point.scale({ x: 0.5, y: 0 }, size),
+						size: Point.scaleConstant(0.5, size),
 					}
 				case Location.RIGHT:
 					return {
-						pos: Point.scale({ x: 0.5, y: 0 }, this.size),
-						size: Point.scale({ x: 0.5, y: 1 }, this.size),
+						pos: Point.scale({ x: 0.5, y: 0 }, size),
+						size: Point.scale({ x: 0.5, y: 1 }, size),
 					}
 				case Location.BOTTOMRIGHT:
 					return {
-						pos: Point.scaleConstant(0.5, this.size),
-						size: Point.scaleConstant(0.5, this.size),
+						pos: Point.scaleConstant(0.5, size),
+						size: Point.scaleConstant(0.5, size),
 					}
 				case Location.BOTTOM:
 					return {
-						pos: Point.scale({ x: 0, y: 0.5 }, this.size),
-						size: Point.scale({ x: 1, y: 0.5 }, this.size),
+						pos: Point.scale({ x: 0, y: 0.5 }, size),
+						size: Point.scale({ x: 1, y: 0.5 }, size),
 					}
 				case Location.BOTTOMLEFT:
 					return {
-						pos: Point.scale({ x: 0, y: 0.5}, this.size),
-						size: Point.scaleConstant(0.5, this.size),
+						pos: Point.scale({ x: 0, y: 0.5}, size),
+						size: Point.scaleConstant(0.5, size),
 					}
 			}
 			return null;
@@ -404,7 +480,7 @@ module Drawing {
 			switch (sel) {
 				case InnerSelection.MAXIMIZE:
 					return {
-						pos: Point.zero(),
+						pos: Point.ZERO,
 						size: this.size,
 					}
 
@@ -414,7 +490,76 @@ module Drawing {
 			}
 		}
 
+		trackMouse(origin: Point): boolean {
+			if (this.tracking === null && this.selection && this.selection.ring == Ring.OUTER) {
+				this.tracking = oppose(this.selection.index);
+				p("preview: tracking corner " + stringOfLocation(this.tracking));
+				this.trackingOrigin = origin;
+				this.bounds = { pos: Point.ZERO, size: this.size };
+				return true;
+			}
+			return false;
+		}
+
+		onMouseMove(event: any) {
+			if (this.tracking === null) {
+				return;
+			}
+			const diff = Point.ofEvent(event, this.trackingOrigin);
+			this.preview = LayoutPreview.applyDiff(this.tracking, diff, this.base, this.bounds);
+			p('move diff ' + JSON.stringify(diff)
+				+ ' (from origin ' + JSON.stringify(this.trackingOrigin) + ')'
+				+ ' turned base ' + JSON.stringify(this.base)
+				+ ' into rect ' + JSON.stringify(this.preview)
+			);
+			this.updateUi();
+		}
+
+		static applyDiff(location: Location, diff: Point, base: Rect, bounds: Rect): Rect {
+			const ret = Rect.copy(base);
+			const scaled = Point.scaleConstant(2.2, diff);
+
+			switch (location) {
+				case Location.LEFT:
+					ret.pos.x += scaled.x;
+					ret.size.x -= scaled.x;
+					break;
+
+				case Location.TOPLEFT:
+					ret.pos.x += scaled.x;
+					ret.size.x -= scaled.x;
+				case Location.TOP:
+					ret.pos.y += scaled.y;
+					ret.size.y -= scaled.y;
+					break;
+
+				case Location.TOPRIGHT:
+					ret.pos.y += scaled.y;
+					ret.size.y -= scaled.y;
+				case Location.RIGHT:
+					ret.size.x += scaled.x;
+					break;
+
+				case Location.BOTTOMRIGHT:
+					ret.size.x += scaled.x;
+				case Location.BOTTOM:
+					ret.size.y += scaled.y;
+					break;
+
+				case Location.BOTTOMLEFT:
+					ret.pos.x += scaled.x;
+					ret.size.x -= scaled.x;
+					ret.size.y += scaled.y;
+					break;
+				default:
+					throw new Error("unknown location: " + location);
+			}
+
+			return Rect.clip(bounds, ret);
+		}
+
 		updateSelection(sel: Selection) {
+			this.selection = sel;
 			switch (sel.ring) {
 				case Ring.OUTER:
 					this.base = this.selectOuter(sel.index);
@@ -462,6 +607,7 @@ module Drawing {
 		private preview: LayoutPreview;
 		private onSelect: FunctionActionRectVoid;
 		private menuHandlers: MenuHandlers;
+		private mouseTracker: MouseTracker;
 
 		constructor(parent: any, screen: Rect, origin: Point, onSelect: FunctionActionRectVoid) {
 			p("creating menu at " + JSON.stringify(origin) + " with bounds " + JSON.stringify(screen));
@@ -486,7 +632,13 @@ module Drawing {
 			const preview = this.preview = new LayoutPreview(screen.size);
 			const handlers = this.menuHandlers = new MenuHandlers(menuSize, origin, canvas, preview);
 			canvas.connect('draw', handlers.draw);
-			backgroundActor.connect('motion-event', handlers.onMouseMove);
+			this.mouseTracker = handlers;
+			backgroundActor.connect('motion-event', function(_actor: any, event: any) {
+				if (self.mouseTracker) {
+					self.mouseTracker.onMouseMove(event);
+				}
+				return Clutter.EVENT_STOP;
+			});
 
 			// XXX shouldn't be necessary. Take grab?
 			backgroundActor.connect('button-press-event', function() {
@@ -498,9 +650,20 @@ module Drawing {
 
 			backgroundActor.connect('key-press-event', function(_actor: any, event: any) {
 				p('keypress: ' + event.get_key_code());
-				if (event.get_key_code() == 9) {
+				const code: number = event.get_key_code();
+				if (code == 9) {
 					self.complete(false);
 					return Clutter.EVENT_STOP;
+				} else if (code == 50) { // shift
+					if (self.preview.trackMouse(handlers.getMousePosition())) {
+						self.mouseTracker = self.preview;
+						menu.hide();
+					} else {
+						p("preview not tracking mouse");
+					}
+					return Clutter.EVENT_STOP;
+				} else if (code == 65) { // space
+					// TODO: move windows around
 				}
 			});
 			backgroundActor.connect('button-press-event', function() {
