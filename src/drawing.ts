@@ -568,7 +568,7 @@ module Drawing {
 			const ret = Rect.copy(base);
 			const scaled = Point.scaleConstant(MANIPULATION_SCALE, diff);
 			function between(min: number, x: number, max: number): number {
-				p('between('+min+', '+x+', '+max+')');
+				// p('between('+min+', '+x+', '+max+')');
 				if (min > x) return min;
 				if (max < x) return max;
 				return x;
@@ -577,7 +577,7 @@ module Drawing {
 			function moveNear(axis: Axis) {
 				// minimum diff is enough to bring this edge to 0 (i.e. invert the current pos)
 				// maximum diff is enough to bring this edge to ther other side of this rect, minus MINIMUM_SIZE
-				p('moveNear['+axis+']');
+				// p('moveNear['+axis+']');
 				const diff = between(-ret.pos[axis], scaled[axis], ret.size[axis] - MINIMUM_SIZE);
 				ret.pos[axis] += diff;
 				ret.size[axis] -= diff;
@@ -586,7 +586,7 @@ module Drawing {
 			function moveFar(axis: Axis) {
 				// minimum diff is enough to bring this edge to the other side of this rect, plus MINIMUM_SIZE
 				// maximum diff is enough to bring this edge to the right bounds
-				p('moveFar['+axis+']');
+				// p('moveFar['+axis+']');
 				const diff = between(MINIMUM_SIZE - ret.size[axis], scaled[axis], bounds.size[axis] - ret.pos[axis] - ret.size[axis]);
 				ret.size[axis] += diff;
 			}
