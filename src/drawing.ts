@@ -21,14 +21,16 @@ module Drawing {
 		a: number
 	}
 
-	interface MouseTracker {
-		onMouseMove(event: any): void
-	}
-
 	export const enum Action {
 		CANCEL,
 		MINIMIZE,
 		RESIZE
+	}
+
+	const enum MouseMode {
+		MENU,
+		RESIZE,
+		MOVE
 	}
 
 	const enum Location {
@@ -138,29 +140,6 @@ module Drawing {
 		export function copy(r: Rect): Rect {
 			return { pos: Point.copy(r.pos), size: Point.copy(r.size) };
 		}
-
-		export function clip(bounds: Rect, r: Rect) {
-			const { pos: bpos, size: bsize } = bounds;
-			const { pos, size } = r;
-			if (bpos.x <= pos.x
-				&& bpos.y <= pos.y
-				&& bsize.x >= size.x
-				&& bsize.y >= size.y
-			) {
-				return r;
-			} else {
-				return {
-					pos: {
-						x: Math.max(bpos.x, pos.x),
-						y: Math.max(bpos.y, pos.y),
-					},
-					size: {
-						x: Math.min(bsize.x, size.x),
-						y: Math.min(bsize.y, size.y),
-					}
-				};
-			}
-		}
 	}
 
 	module Selection {
@@ -181,9 +160,9 @@ module Drawing {
 		}
 	}
 
-	class MenuHandlers implements MouseTracker {
+	class MenuHandlers {
 		draw: Function
-		onMouseMove: (event: any) => void
+		onMouseMove: (mode: MouseMode, event: any) => void
 		private origin: Point
 		private currentMouseRelative: Point
 		private selection: Selection
@@ -371,8 +350,11 @@ module Drawing {
 			const innerIndex = circularIndex(2, 0);
 			const outerIndex = circularIndex(8, ANGLE_SIXTEENTH);
 
-			this.onMouseMove = function(event: any) {
+			this.onMouseMove = function(mode: MouseMode, event: any) {
 				const point = this.currentMouseRelative = Point.ofEvent(event, origin);
+				if (mode !== MouseMode.MENU) {
+					return;
+				}
 				const { x, y } = point;
 				const radius = Math.sqrt(Math.pow(x,2) + Math.pow(y,2));
 				const angle = Math.atan2(y, x);
@@ -406,14 +388,14 @@ module Drawing {
 		}
 	}
 
-	class LayoutPreview implements MouseTracker {
+	class LayoutPreview {
 		private size: Point
 		private bounds: Rect
 		private base: Rect
 		private preview: Rect
 		private selection: Selection;
 		ui: any
-		tracking: Location;
+		resizeCorner: Location;
 		trackingOrigin: Point;
 
 		constructor(size: Point) {
@@ -425,7 +407,7 @@ module Drawing {
 				blue: 255,
 				alpha: 125
 			}));
-			this.tracking = null;
+			this.resizeCorner = null;
 			this.ui.hide();
 		}
 
@@ -490,72 +472,136 @@ module Drawing {
 			}
 		}
 
-		trackMouse(origin: Point): boolean {
-			if (this.tracking === null && this.selection && this.selection.ring == Ring.OUTER) {
-				this.tracking = oppose(this.selection.index);
-				p("preview: tracking corner " + stringOfLocation(this.tracking));
-				this.trackingOrigin = origin;
-				this.bounds = { pos: Point.ZERO, size: this.size };
-				return true;
+		trackMouse(mode: MouseMode, origin: Point): boolean {
+			if (!this.selection || this.selection.ring !== Ring.OUTER) {
+				return false;
 			}
-			return false;
+
+			this.trackingOrigin = origin;
+			this.bounds = { pos: Point.ZERO, size: this.size };
+			this.base = this.preview; // capture whatever we have as a base
+
+			switch (mode) {
+				case MouseMode.RESIZE:
+					this.resizeCorner = oppose(this.selection.index);
+					p("preview: tracking corner " + stringOfLocation(this.resizeCorner));
+				break;
+
+				case MouseMode.MOVE:
+					this.trackingOrigin = origin;
+					this.bounds = { pos: Point.ZERO, size: this.size };
+				break;
+
+				case MouseMode.MENU:
+				default:
+					return false;
+			}
+			return true;
 		}
 
-		onMouseMove(event: any) {
-			if (this.tracking === null) {
-				return;
-			}
+		onMouseMove(mode: MouseMode, event: any) {
 			const diff = Point.ofEvent(event, this.trackingOrigin);
-			this.preview = LayoutPreview.applyDiff(this.tracking, diff, this.base, this.bounds);
-			p('move diff ' + JSON.stringify(diff)
-				+ ' (from origin ' + JSON.stringify(this.trackingOrigin) + ')'
-				+ ' turned base ' + JSON.stringify(this.base)
-				+ ' into rect ' + JSON.stringify(this.preview)
-			);
+			switch (mode) {
+				case MouseMode.RESIZE:
+					if (this.resizeCorner === null) {
+						return;
+					}
+					this.preview = LayoutPreview.applyResize(this.resizeCorner, diff, this.base, this.bounds);
+					// p('move diff ' + JSON.stringify(diff)
+					// 	+ ' (from origin ' + JSON.stringify(this.trackingOrigin) + ')'
+					// 	+ ' turned base ' + JSON.stringify(this.base)
+					// 	+ ' into rect ' + JSON.stringify(this.preview)
+					// );
+				break;
+
+				case MouseMode.MOVE:
+					this.preview = LayoutPreview.applyMove(diff, this.base, this.bounds);
+					// p('move diff ' + JSON.stringify(diff)
+					// 	+ ' (from origin ' + JSON.stringify(this.trackingOrigin) + ')'
+					// 	+ ' turned base ' + JSON.stringify(this.base)
+					// 	+ ' into rect ' + JSON.stringify(this.preview)
+					// );
+
+				break;
+			}
 			this.updateUi();
 		}
 
-		static applyDiff(location: Location, diff: Point, base: Rect, bounds: Rect): Rect {
+		static applyMove(diff: Point, base: Rect, bounds: Rect): Rect {
 			const ret = Rect.copy(base);
-			const scaled = Point.scaleConstant(2.2, diff);
+			const scaled = Point.scaleConstant(MANIPULATION_SCALE, diff);
+			// Note: this doesn't consider bounds.pos, it's assumed to be (0,0)
+			ret.pos.x = Math.max(0, Math.min(ret.pos.x + scaled.x, bounds.size.x - ret.size.x));
+			ret.pos.y = Math.max(0, Math.min(ret.pos.y + scaled.y, bounds.size.y - ret.size.y));
+			return ret;
+		}
+
+		static applyResize(location: Location, diff: Point, base: Rect, bounds: Rect): Rect {
+			const ret = Rect.copy(base);
+			const scaled = Point.scaleConstant(MANIPULATION_SCALE, diff);
+			function between(min: number, x: number, max: number): number {
+				if (min > x) return min;
+				if (max < x) return max;
+				return x;
+			}
+
+			function moveNear(axis: Axis) {
+				// minimum diff is enough to bring this edge to 0 (i.e. invert the current pos)
+				// maximum diff is enough to bring this edge to ther other side of this rect, minus MINIMUM_SIZE
+				const diff = between(-ret.pos[axis], scaled[axis], bounds.size[axis] - ret.size[axis] - MINIMUM_SIZE);
+				ret.pos[axis] += diff;
+				ret.size[axis] -= diff;
+			}
+
+			function moveFar(axis: Axis) {
+				// minimum diff is enough to bring this edge to the other side of this rect, plus MINIMUM_SIZE
+				// maximum diff is enough to bring this edge to the right bounds
+				const diff = between(MINIMUM_SIZE - ret.size[axis], scaled[axis], bounds.size[axis] - ret.pos[axis] - ret.size[axis]);
+				ret.size[axis] += diff;
+			}
 
 			switch (location) {
 				case Location.LEFT:
-					ret.pos.x += scaled.x;
-					ret.size.x -= scaled.x;
-					break;
+					moveNear(Axis.x);
+				break;
 
 				case Location.TOPLEFT:
-					ret.pos.x += scaled.x;
-					ret.size.x -= scaled.x;
+					moveNear(Axis.x);
+					moveNear(Axis.y);
+				break;
+	
 				case Location.TOP:
-					ret.pos.y += scaled.y;
-					ret.size.y -= scaled.y;
-					break;
+					moveNear(Axis.y);
+				break;
 
 				case Location.TOPRIGHT:
-					ret.pos.y += scaled.y;
-					ret.size.y -= scaled.y;
-				case Location.RIGHT:
-					ret.size.x += scaled.x;
-					break;
+					moveNear(Axis.y);
+					moveFar(Axis.x);
+				break;
 
+				case Location.RIGHT:
+					moveFar(Axis.x);
+				break;
+					
 				case Location.BOTTOMRIGHT:
-					ret.size.x += scaled.x;
+					moveFar(Axis.x);
+					moveFar(Axis.y);
+				break;
+
 				case Location.BOTTOM:
-					ret.size.y += scaled.y;
-					break;
+					moveFar(Axis.y);
+				break;
 
 				case Location.BOTTOMLEFT:
-					ret.pos.x += scaled.x;
-					ret.size.x -= scaled.x;
-					ret.size.y += scaled.y;
-					break;
+					moveNear(Axis.x);
+					moveFar(Axis.y);
+				break;
+
 				default:
 					throw new Error("unknown location: " + location);
 			}
 
-			return Rect.clip(bounds, ret);
+			return ret;
 		}
 
 		updateSelection(sel: Selection) {
@@ -601,18 +647,22 @@ module Drawing {
 
 	type FunctionActionRectVoid = (action:Action, rect:Rect) => void
 
+	const MANIPULATION_SCALE = 2.2;
+	const MINIMUM_SIZE = 20;
+
 	export class Menu {
 		ui: any;
 		private parent: any;
 		private preview: LayoutPreview;
 		private onSelect: FunctionActionRectVoid;
 		private menuHandlers: MenuHandlers;
-		private mouseTracker: MouseTracker;
+		private mouseMode: MouseMode;
 
 		constructor(parent: any, screen: Rect, origin: Point, onSelect: FunctionActionRectVoid) {
 			p("creating menu at " + JSON.stringify(origin) + " with bounds " + JSON.stringify(screen));
 			const self = this;
 			this.parent = parent;
+			this.mouseMode = MouseMode.MENU;
 			this.onSelect = onSelect;
 			const backgroundActor = new Clutter.Actor();
 			backgroundActor.set_size(screen.size.x, screen.size.y);
@@ -632,11 +682,9 @@ module Drawing {
 			const preview = this.preview = new LayoutPreview(screen.size);
 			const handlers = this.menuHandlers = new MenuHandlers(menuSize, origin, canvas, preview);
 			canvas.connect('draw', handlers.draw);
-			this.mouseTracker = handlers;
 			backgroundActor.connect('motion-event', function(_actor: any, event: any) {
-				if (self.mouseTracker) {
-					self.mouseTracker.onMouseMove(event);
-				}
+				self.menuHandlers.onMouseMove(self.mouseMode, event);
+				self.preview.onMouseMove(self.mouseMode, event);
 				return Clutter.EVENT_STOP;
 			});
 
@@ -654,16 +702,17 @@ module Drawing {
 				if (code == 9) {
 					self.complete(false);
 					return Clutter.EVENT_STOP;
-				} else if (code == 50) { // shift
-					if (self.preview.trackMouse(handlers.getMousePosition())) {
-						self.mouseTracker = self.preview;
+				} else if (code == 50 && self.mouseMode !== MouseMode.RESIZE) { // shift
+					if (self.preview.trackMouse(MouseMode.RESIZE, handlers.getMousePosition())) {
+						self.mouseMode = MouseMode.RESIZE;
 						menu.hide();
-					} else {
-						p("preview not tracking mouse");
 					}
 					return Clutter.EVENT_STOP;
-				} else if (code == 65) { // space
-					// TODO: move windows around
+				} else if (code == 65 && self.mouseMode !== MouseMode.MOVE) { // space
+					if (self.preview.trackMouse(MouseMode.MOVE, handlers.getMousePosition())) {
+						self.mouseMode = MouseMode.MOVE;
+						menu.hide();
+					}
 				}
 			});
 			backgroundActor.connect('button-press-event', function() {
