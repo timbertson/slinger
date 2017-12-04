@@ -88,6 +88,7 @@ class Extension {
 		const pointer = display.get_device_manager().get_client_pointer();
 		const mousePos = pointer.get_position();
 		const screenIdx = mousePos[0];
+		const metaRect: MetaRect = window.get_frame_rect();
 
 		// const monitorIdx = global.screen.get_primary_monitor();
 		const screen: MetaRect = global.screen.get_workspace_by_index(0).get_work_area_for_monitor(screenIdx);
@@ -99,11 +100,16 @@ class Extension {
 			x: screen.width,
 			y: screen.height
 		};
+		const windowRect: Rect = {
+			pos: { x: metaRect.x - pos.x, y: metaRect.y - pos.y },
+			size: { x: metaRect.width, y: metaRect.height },
+		};
 
 		this.menu = new Drawing.Menu(
 			global.window_group,
 			{ size, pos },
 			{ x: mousePos[1], y: mousePos[2]},
+			windowRect,
 			this.onLayoutSelect(window, pos)
 		);
 		this.menu.ui.set_position(pos.x, pos.y);
