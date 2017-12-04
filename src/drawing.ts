@@ -204,6 +204,8 @@ module Drawing {
 			const EDGE_WIDTH = floor(OUTER_RADIUS * 0.34);
 			const CORNER_WIDTH = floor(OUTER_RADIUS * 0.4);
 			const CORNER_DISTANCE = floor(OUTER_RADIUS * 0.8);
+			const GLYPH_WIDTH = floor(OUTER_RADIUS * 0.09);
+			const GLYPH_THICKNESS = floor(OUTER_RADIUS * 0.03);
 			const DARK = floatColor({ r: 18, g: 36, b: 48, a: 200 });
 			const LIGHT = floatColor({ r: 66, g: 79, b: 92, a: 237 });
 			const BG = { luminance: 0.7, alpha: 0.7 };
@@ -349,6 +351,13 @@ module Drawing {
 				cr.arc(0, 0, MID_RADIUS - ((MID_RADIUS - INNER_RADIUS) / 2) - HALF_GAP_WIDTH, 0, PI);
 				activeColorInner(cr, selection, InnerSelection.MINIMIZE);
 				cr.stroke();
+
+				const glyphOffset = MID_RADIUS - ((MID_RADIUS-INNER_RADIUS + GAP_WIDTH)/2)
+				cr.rectangle(-(GLYPH_WIDTH/2), -glyphOffset - (GLYPH_THICKNESS/2), GLYPH_WIDTH, GLYPH_THICKNESS);
+				cr.rectangle(-(GLYPH_THICKNESS/2), -glyphOffset - (GLYPH_WIDTH/2), GLYPH_THICKNESS, GLYPH_WIDTH);
+				cr.rectangle(-(GLYPH_WIDTH/2), glyphOffset - (GLYPH_THICKNESS/2), GLYPH_WIDTH, GLYPH_THICKNESS);
+				setGrey(cr, BG);
+				cr.fill();
 
 				cr.restore();
 				return Clutter.EVENT_STOP;
@@ -744,7 +753,7 @@ module Drawing {
 						self.mouseMode = MouseMode.MOVE;
 						menu.hide();
 					}
-				} else if (code == 133) { // alt
+				} else if (code == 64) { // ctrl
 					self.mouseMode = MouseMode.NOOP;
 					menu.hide();
 				}
