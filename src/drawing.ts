@@ -45,19 +45,19 @@ module Drawing {
 		BOTTOMLEFT,
 	}
 
-	function stringOfLocation(loc: Location): string {
-		switch(loc) {
-			case Location.LEFT: return 'LEFT';
-			case Location.TOPLEFT: return 'TOPLEFT';
-			case Location.TOP: return 'TOP';
-			case Location.TOPRIGHT: return 'TOPRIGHT';
-			case Location.RIGHT: return 'RIGHT';
-			case Location.BOTTOMRIGHT: return 'BOTTOMRIGHT';
-			case Location.BOTTOM: return 'BOTTOM';
-			case Location.BOTTOMLEFT: return 'BOTTOMLEFT';
-			default: return '<unknown>';
-		}
-	}
+	// function stringOfLocation(loc: Location): string {
+	// 	switch(loc) {
+	// 		case Location.LEFT: return 'LEFT';
+	// 		case Location.TOPLEFT: return 'TOPLEFT';
+	// 		case Location.TOP: return 'TOP';
+	// 		case Location.TOPRIGHT: return 'TOPRIGHT';
+	// 		case Location.RIGHT: return 'RIGHT';
+	// 		case Location.BOTTOMRIGHT: return 'BOTTOMRIGHT';
+	// 		case Location.BOTTOM: return 'BOTTOM';
+	// 		case Location.BOTTOMLEFT: return 'BOTTOMLEFT';
+	// 		default: return '<unknown>';
+	// 	}
+	// }
 
 	export function oppose(loc: Location): Location {
 		return (loc + 4) % 8; // Magic!
@@ -528,9 +528,13 @@ module Drawing {
 			this.bounds = { pos: Point.ZERO, size: this.size };
 			this.trackingOrigin = origin;
 			this.base = this.preview; // capture whatever we have as a base
-			p("preview: tracking corner " + stringOfLocation(this.resizeCorner));
-
 			return true;
+		}
+
+		resumeTracking(origin: Point) {
+			this.base = this.preview;
+			this.resizeCorner = Rect.closestCorner(this.preview, origin);
+			this.trackingOrigin = origin;
 		}
 
 		onMouseMove(mode: MouseMode, event: any) {
@@ -736,8 +740,9 @@ module Drawing {
 			Clutter.grab_pointer(backgroundActor);
 			Clutter.grab_keyboard(backgroundActor);
 
+			var suspendedMouseMode = MouseMode.NOOP;
 			backgroundActor.connect('key-press-event', function(_actor: any, event: any) {
-				p('keypress: ' + event.get_key_code());
+				// p('keypress: ' + event.get_key_code());
 				const code: number = event.get_key_code();
 				if (code == 9) {
 					self.complete(false);
@@ -754,10 +759,27 @@ module Drawing {
 						menu.hide();
 					}
 				} else if (code == 64) { // ctrl
-					self.mouseMode = MouseMode.NOOP;
-					menu.hide();
+					if (self.mouseMode != MouseMode.NOOP) {
+						suspendedMouseMode = self.mouseMode;
+						self.mouseMode = MouseMode.NOOP;
+						menu.hide();
+					}
 				}
 			});
+
+			backgroundActor.connect('key-release-event', function(_actor: any, event: any) {
+				// p('keyup: ' + event.get_key_code());
+				const code: number = event.get_key_code();
+				if (code == 64) { // ctrl
+					if (suspendedMouseMode != MouseMode.NOOP) {
+						self.mouseMode = suspendedMouseMode;
+						self.preview.resumeTracking(handlers.getMousePosition());
+						suspendedMouseMode = MouseMode.NOOP;
+					}
+					return Clutter.EVENT_STOP;
+				}
+			});
+
 			backgroundActor.connect('button-press-event', function() {
 				self.complete(true);
 				return Clutter.EVENT_STOP;
