@@ -45,6 +45,16 @@ module Drawing {
 		BOTTOMLEFT,
 	}
 
+	// TODO: how constant are these?
+	const enum KeyCode {
+		ESC = 9,
+		SHIFT = 50,
+		SPACE = 65,
+		CTRL = 64,
+		ALT = 133,
+		TAB = 23,
+	}
+
 	// function stringOfLocation(loc: Location): string {
 	// 	switch(loc) {
 	// 		case Location.LEFT: return 'LEFT';
@@ -433,6 +443,7 @@ module Drawing {
 
 		constructor(size: Point, windowRect: Rect) {
 			this.size = size;
+			this.bounds = { pos: Point.ZERO, size: this.size };
 			this.ui = new Clutter.Actor();
 			this.ui.set_background_color(new Clutter.Color({
 				red: 80,
@@ -507,34 +518,38 @@ module Drawing {
 			}
 		}
 
-		trackMouse(_mode: MouseMode, origin: Point): boolean {
-			switch (this.selection.ring) {
-				case Ring.INNER:
-					return false;
+		trackMouse(prevMode: MouseMode, origin: Point): boolean {
+			if (prevMode == MouseMode.MENU) {
+				switch (this.selection.ring) {
+					case Ring.INNER:
+						return false;
 
-				case Ring.OUTER:
-					this.resizeCorner = oppose(this.selection.index);
-					break;
+					case Ring.OUTER:
+						this.resizeCorner = oppose(this.selection.index);
+						this.trackingOrigin = origin;
+						break;
 
-				case Ring.NONE:
-					if (this.preview == null) {
-						this.preview = this.windowRect;
-					}
-					this.updateUi();
-					this.resizeCorner = Rect.closestCorner(this.preview, origin);
-					break;
+					case Ring.NONE:
+						this.resetTracking(origin);
+						break;
+				}
+			} else {
+				this.resetTracking(origin);
 			}
 
-			this.bounds = { pos: Point.ZERO, size: this.size };
-			this.trackingOrigin = origin;
 			this.base = this.preview; // capture whatever we have as a base
+			this.updateUi();
 			return true;
 		}
 
-		resumeTracking(origin: Point) {
+		resetTracking(origin: Point) {
+			if (this.preview == null) {
+				this.preview = this.windowRect;
+			}
 			this.base = this.preview;
 			this.resizeCorner = Rect.closestCorner(this.preview, origin);
 			this.trackingOrigin = origin;
+			this.updateUi();
 		}
 
 		onMouseMove(mode: MouseMode, event: any) {
@@ -740,44 +755,38 @@ module Drawing {
 			Clutter.grab_pointer(backgroundActor);
 			Clutter.grab_keyboard(backgroundActor);
 
-			var suspendedMouseMode = MouseMode.NOOP;
+			// var suspendedMouseMode = MouseMode.NOOP;
 			backgroundActor.connect('key-press-event', function(_actor: any, event: any) {
-				// p('keypress: ' + event.get_key_code());
 				const code: number = event.get_key_code();
-				if (code == 9) {
+				p('keypress: ' + code);
+				if (code == KeyCode.ESC) {
 					self.complete(false);
-					return Clutter.EVENT_STOP;
-				} else if (code == 50 && self.mouseMode !== MouseMode.RESIZE) { // shift
-					if (self.preview.trackMouse(MouseMode.RESIZE, handlers.getMousePosition())) {
+				} else if (code == KeyCode.SPACE || code == KeyCode.TAB) {
+					self.preview.resetTracking(handlers.getMousePosition());
+					self.mouseMode = MouseMode.NOOP;
+					menu.hide();
+				} else if (code == KeyCode.ALT && self.mouseMode !== MouseMode.RESIZE) {
+					if (self.preview.trackMouse(self.mouseMode, handlers.getMousePosition())) {
 						self.mouseMode = MouseMode.RESIZE;
 						menu.hide();
 					}
-					return Clutter.EVENT_STOP;
-				} else if (code == 65 && self.mouseMode !== MouseMode.MOVE) { // space
-					if (self.preview.trackMouse(MouseMode.MOVE, handlers.getMousePosition())) {
+				} else if (code == KeyCode.SHIFT && self.mouseMode !== MouseMode.MOVE) {
+					if (self.preview.trackMouse(self.mouseMode, handlers.getMousePosition())) {
 						self.mouseMode = MouseMode.MOVE;
 						menu.hide();
 					}
-				} else if (code == 64) { // ctrl
-					if (self.mouseMode != MouseMode.NOOP) {
-						suspendedMouseMode = self.mouseMode;
-						self.mouseMode = MouseMode.NOOP;
-						menu.hide();
-					}
 				}
+				return Clutter.EVENT_STOP;
 			});
 
 			backgroundActor.connect('key-release-event', function(_actor: any, event: any) {
-				// p('keyup: ' + event.get_key_code());
 				const code: number = event.get_key_code();
-				if (code == 64) { // ctrl
-					if (suspendedMouseMode != MouseMode.NOOP) {
-						self.mouseMode = suspendedMouseMode;
-						self.preview.resumeTracking(handlers.getMousePosition());
-						suspendedMouseMode = MouseMode.NOOP;
-					}
-					return Clutter.EVENT_STOP;
+				// p('keyup: ' + code);
+				if (code == KeyCode.SHIFT || code == KeyCode.ALT || code == KeyCode.SPACE) {
+					// suspend operations!
+					self.mouseMode = MouseMode.NOOP;
 				}
+				return Clutter.EVENT_STOP;
 			});
 
 			backgroundActor.connect('button-press-event', function() {
