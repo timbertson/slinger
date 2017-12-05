@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-	<schema id="org.gnome.shell.extensions.net.gfxmonk.throwy.keybindings" path="/org/gnome/shell/extensions/net/gfxmonk/throwy/keybindings/">
-		<key type="as" name="throwy-show">                         <default>["&lt;Mod4&gt;a"]</default><summary>Show the throwy UI</summary><description></description></key>
+	<schema id="org.gnome.shell.extensions.net.gfxmonk.slinger.keybindings" path="/org/gnome/shell/extensions/net/gfxmonk/slinger/keybindings/">
+		<key type="as" name="slinger-show">                         <default>["&lt;Mod4&gt;a"]</default><summary>Show the slinger UI</summary><description></description></key>
 	</schema>
 </schemalist>

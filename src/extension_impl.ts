@@ -66,8 +66,8 @@ class Extension {
 			});
 		};
 
-		p("adding keyboard handlers for throwy");
-		handle('throwy-show', self.show_ui.bind(this));
+		p("adding keyboard handlers for slinger");
+		handle('slinger-show', self.show_ui.bind(this));
 	}
 
 	private show_ui(a:any, b: any, c: any, d: any) {

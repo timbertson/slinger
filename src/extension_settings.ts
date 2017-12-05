@@ -5,7 +5,7 @@ module Settings {
 	var ExtensionUtils = imports.misc.extensionUtils;
 	var Ext = ExtensionUtils.getCurrentExtension();
 
-	var SCHEMA_ROOT = 'org.gnome.shell.extensions.net.gfxmonk.throwy';
+	var SCHEMA_ROOT = 'org.gnome.shell.extensions.net.gfxmonk.slinger';
 	var KEYBINDINGS = SCHEMA_ROOT + '.keybindings';
 
 	function get_local_gsettings(schema_path: string) {
@@ -33,18 +33,6 @@ module Settings {
 
 		constructor() {
 			this.settings = get_local_gsettings(KEYBINDINGS);
-			// this.each = function(fn, ctx) {
-			// 	var keys = settings.list_children();
-			// 	for (var i=0; i < keys.length; i++) {
-			// 		var key = keys[i];
-			// 		var setting = {
-			// 			key: key,
-			// 			get: function() { return settings.get_string_array(key); },
-			// 			set: function(v) { settings.set_string_array(key, v); },
-			// 		};
-			// 		fn.call(ctx, setting);
-			// 	}
-			// };
 		}
 	};
 }
