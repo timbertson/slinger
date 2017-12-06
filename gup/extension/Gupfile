@@ -1,3 +1,5 @@
+../copy-autoimport-shim:
+	extension.js
+
 ../make-js:
-	extension_impl.js
-	clutter_test.js
+	*.js

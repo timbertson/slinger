@@ -1,2 +1,3 @@
 /extension/*.js
+!/extension/extension.js
 gschemas.compiled
