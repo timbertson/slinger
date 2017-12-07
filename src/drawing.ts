@@ -196,6 +196,7 @@ module Drawing {
 	class MenuHandlers {
 		draw: Function
 		onMouseMove: (mode: MouseMode, event: any) => void
+		updateSelection: (selection: Selection) => void
 		private origin: Point
 		private currentMouseRelative: Point
 		private selection: Selection
@@ -373,7 +374,7 @@ module Drawing {
 				return Clutter.EVENT_STOP;
 			}
 
-			function updateSelection(newSelection: Selection) {
+			this.updateSelection = function(newSelection: Selection) {
 				if (!Selection.eq(self.selection, newSelection)) {
 					p("updateSelection(" + JSON.stringify(newSelection) + ")");
 					self.selection = newSelection;
@@ -404,14 +405,14 @@ module Drawing {
 				// log("angle = " + angle);
 
 				if (radius <= INNER_RADIUS) {
-					updateSelection(UNSELECTED);
+					this.updateSelection(UNSELECTED);
 				} else if (radius < MID_RADIUS) {
-					updateSelection({
+					this.updateSelection({
 						ring: Ring.INNER,
 						index: innerIndex(angle),
 					});
 				} else {
-					updateSelection({
+					this.updateSelection({
 						ring: Ring.OUTER,
 						index: outerIndex(angle),
 					});
@@ -762,6 +763,7 @@ module Drawing {
 				if (code == KeyCode.ESC) {
 					self.complete(false);
 				} else if (code == KeyCode.SPACE || code == KeyCode.TAB) {
+					handlers.updateSelection(Selection.None);
 					self.preview.resetTracking(handlers.getMousePosition());
 					self.mouseMode = MouseMode.NOOP;
 					menu.hide();
