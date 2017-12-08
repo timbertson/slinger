@@ -67,23 +67,42 @@ module Menu {
 		}
 	}
 
+	function circularIndex(sections: number, offset: number) {
+		const span = TAO / sections;
+		return function(angle: number) {
+			return floor((angle + PI + offset) / span) % sections;
+		}
+	}
+
+	const ANGLE_HALF = PI;
+	const ANGLE_QUARTER = ANGLE_HALF / 2;
+	const ANGLE_EIGHTH = ANGLE_QUARTER / 2;
+	const ANGLE_SIXTEENTH = ANGLE_EIGHTH / 2;
+
+	const innerIndex = circularIndex(2, 0);
+	const outerIndex = circularIndex(8, ANGLE_SIXTEENTH);
+
 	class MenuHandlers {
 		draw: Function
-		onMouseMove: (mode: MouseMode, event: any) => void
-		updateSelection: (selection: Selection) => void
 		private origin: Point
 		private currentMouseRelative: Point
 		private selection: Selection
+		private INNER_RADIUS: number;
+		private MID_RADIUS: number;
+		private preview: Preview.LayoutPreview;
+		private canvas: any;
 
 		constructor(menuSize: Point, origin: Point, canvas: any, preview: Preview.LayoutPreview) {
 			this.currentMouseRelative = Point.ZERO;
 			this.origin = origin;
+			this.preview = preview;
+			this.canvas = canvas;
 
 			const HALF : Point = Point.scaleConstant(0.5, menuSize);
 			const BORDER_WIDTH = floor(menuSize.x * 0.03);
 			const OUTER_RADIUS = floor(menuSize.x / 2) - BORDER_WIDTH;
-			const MID_RADIUS = floor(OUTER_RADIUS * 0.3);
-			const INNER_RADIUS = floor(OUTER_RADIUS * 0.1);
+			const MID_RADIUS = this.MID_RADIUS = floor(OUTER_RADIUS * 0.3);
+			const INNER_RADIUS = this.INNER_RADIUS = floor(OUTER_RADIUS * 0.1);
 			const GAP_WIDTH = floor(OUTER_RADIUS * 0.05);
 			const HALF_GAP_WIDTH = floor(GAP_WIDTH / 2);
 			const EDGE_WIDTH = floor(OUTER_RADIUS * 0.34);
@@ -96,15 +115,7 @@ module Menu {
 			const BG = { luminance: 0.7, alpha: 0.7 };
 			const ACTIVE = floatColor({ r: 45, g: 155, b: 203, a: 255 });
 
-			const ANGLE_HALF = PI;
-			const ANGLE_QUARTER = ANGLE_HALF / 2;
-			const ANGLE_EIGHTH = ANGLE_QUARTER / 2;
-			const ANGLE_SIXTEENTH = ANGLE_EIGHTH / 2;
-
-			const UNSELECTED = { ring: 0, index: 0 }
-
 			this.selection = Selection.None;
-			const self = this;
 
 			function setGrey(cr: any, grey: Grey) {
 				cr.setSourceRGBA(grey.luminance, grey.luminance, grey.luminance, grey.alpha);
@@ -129,6 +140,7 @@ module Menu {
 				activeColor(cr, selection, Ring.OUTER, location)
 			}
 
+			const self = this;
 			this.draw = function draw(_canvas: any, cr: any, _width: number, _height: number) {
 				const selection = self.selection;
 				// reset surface
@@ -246,40 +258,20 @@ module Menu {
 				cr.restore();
 				return Clutter.EVENT_STOP;
 			}
+		}
 
-			this.updateSelection = function(newSelection: Menu.Selection) {
-				if (!Selection.eq(self.selection, newSelection)) {
-					p("updateSelection(" + JSON.stringify(newSelection) + ")");
-					self.selection = newSelection;
-					canvas.invalidate();
-					preview.updateSelection(newSelection);
-				}
-			}
-
-			function circularIndex(sections: number, offset: number) {
-				const span = TAO / sections;
-				return function(angle: number) {
-					return floor((angle + PI + offset) / span) % sections;
-				}
-			}
-
-			const innerIndex = circularIndex(2, 0);
-			const outerIndex = circularIndex(8, ANGLE_SIXTEENTH);
-
-			this.onMouseMove = function(mode: MouseMode, event: any) {
-				const point = this.currentMouseRelative = Point.ofEvent(event, origin);
-				if (mode !== MouseMode.MENU) {
-					return;
-				}
+		onMouseMove(mode: MouseMode, event: any): void {
+			const point = this.currentMouseRelative = Point.ofEvent(event, this.origin);
+			if (mode === MouseMode.MENU) {
 				const { x, y } = point;
 				const radius = Math.sqrt(Math.pow(x,2) + Math.pow(y,2));
 				const angle = Math.atan2(y, x);
 				// log("radius = " + radius);
 				// log("angle = " + angle);
 
-				if (radius <= INNER_RADIUS) {
-					this.updateSelection(UNSELECTED);
-				} else if (radius < MID_RADIUS) {
+				if (radius <= this.INNER_RADIUS) {
+					this.updateSelection(Selection.None);
+				} else if (radius < this.MID_RADIUS) {
 					this.updateSelection({
 						ring: Ring.INNER,
 						index: innerIndex(angle),
@@ -290,22 +282,47 @@ module Menu {
 						index: outerIndex(angle),
 					});
 				}
-				return Clutter.EVENT_STOP;
 			}
+			this.preview.onMouseMove(mode, event);
+			return Clutter.EVENT_STOP;
+		}
 
+		resetTracking() {
+			this.updateSelection(Selection.None);
+			this.preview.resetTracking(this.getMousePosition());
+		}
+
+		trackMouse(prevMode: MouseMode): boolean {
+			return this.preview.trackMouse(prevMode, this.getMousePosition());
+		}
+
+		updateSelection(newSelection: Menu.Selection): void {
+			if (!Selection.eq(this.selection, newSelection)) {
+				p("updateSelection(" + JSON.stringify(newSelection) + ")");
+				this.selection = newSelection;
+				this.canvas.invalidate();
+				this.preview.updateSelection(newSelection);
+			}
 		}
 
 		getSelection(): Selection {
 			return this.selection;
 		}
 
-		getMousePosition(): Point {
+		private getMousePosition(): Point {
 			return Point.add(this.origin, this.currentMouseRelative);
 		}
 	}
 
-
 	type FunctionActionRectVoid = (action:Action, rect:Rect) => void
+
+	function modeForKey(key: KeyCode): MouseMode {
+		switch(key) {
+			case KeyCode.SHIFT: return MouseMode.MOVE;
+			case KeyCode.ALT: return MouseMode.RESIZE;
+			default: return null;
+		}
+	}
 
 	export class Menu {
 		ui: any;
@@ -313,6 +330,7 @@ module Menu {
 		private preview: Preview.LayoutPreview;
 		private onSelect: FunctionActionRectVoid;
 		private menuHandlers: MenuHandlers;
+		private menu: any;
 		private mouseMode: MouseMode;
 
 		constructor(parent: any, screen: Rect, origin: Point, windowRect: Rect, onSelect: FunctionActionRectVoid) {
@@ -324,7 +342,7 @@ module Menu {
 			const backgroundActor = new Clutter.Actor();
 			backgroundActor.set_size(screen.size.x, screen.size.y);
 
-			const menu = new Clutter.Actor();
+			const menu = this.menu = new Clutter.Actor();
 
 			const menuSize: Point = { x: 200, y: 200 };
 			menu.set_size(menuSize.x, menuSize.y);
@@ -340,62 +358,21 @@ module Menu {
 			const handlers = this.menuHandlers = new MenuHandlers(menuSize, origin, canvas, preview);
 			canvas.connect('draw', handlers.draw);
 			backgroundActor.connect('motion-event', function(_actor: any, event: any) {
-				// p("mouseMove with mode = " + self.mouseMode);
 				self.menuHandlers.onMouseMove(self.mouseMode, event);
-				self.preview.onMouseMove(self.mouseMode, event);
 				return Clutter.EVENT_STOP;
-			});
-
-			// XXX shouldn't be necessary. Take grab?
-			backgroundActor.connect('button-press-event', function() {
-				backgroundActor.grab_key_focus();
 			});
 
 			Clutter.grab_pointer(backgroundActor);
 			Clutter.grab_keyboard(backgroundActor);
 
-			function modeForKey(key: KeyCode) {
-				switch(key) {
-					case KeyCode.SHIFT: return MouseMode.MOVE;
-					case KeyCode.ALT: return MouseMode.RESIZE;
-					default: return null;
-				}
-			}
-
 			// var suspendedMouseMode = MouseMode.NOOP;
 			backgroundActor.connect('key-press-event', function(_actor: any, event: any) {
-				const code: number = event.get_key_code();
-				// p('keypress: ' + code);
-				if (code == KeyCode.ESC) {
-					self.complete(false);
-				} else if (code == KeyCode.SPACE || code == KeyCode.TAB) {
-					p("entering NOOP(drag) mode");
-					handlers.updateSelection(Selection.None);
-					self.preview.resetTracking(handlers.getMousePosition());
-					self.mouseMode = MouseMode.NOOP;
-					menu.hide();
-				} else {
-					const newMode = modeForKey(code);
-					if (newMode != null && self.mouseMode !== newMode) {
-						if (self.preview.trackMouse(self.mouseMode, handlers.getMousePosition())) {
-							p("entering mode " + newMode);
-							self.mouseMode = newMode;
-							menu.hide();
-						} else {
-							p("not entering " + newMode + " due to current menu selection");
-						}
-					}
-				}
+				self.onKeyPress(event);
 				return Clutter.EVENT_STOP;
 			});
 
 			backgroundActor.connect('key-release-event', function(_actor: any, event: any) {
-				const code: number = event.get_key_code();
-				const fromState = modeForKey(code);
-				if (fromState != null && self.mouseMode == fromState) {
-					p("ending mode " + fromState);
-					self.mouseMode = MouseMode.NOOP;
-				}
+				self.onKeyRelease(event);
 				return Clutter.EVENT_STOP;
 			});
 
@@ -419,6 +396,39 @@ module Menu {
 			this.parent.insert_child_above(this.ui, null);
 			backgroundActor.grab_key_focus();
 			canvas.invalidate();
+		}
+
+		onKeyPress(event: any) {
+			const code: number = event.get_key_code();
+			// p('keypress: ' + code);
+			if (code == KeyCode.ESC) {
+				this.complete(false);
+			} else if (code == KeyCode.SPACE || code == KeyCode.TAB) {
+				p("entering NOOP(drag) mode");
+				this.menuHandlers.resetTracking();
+				this.mouseMode = MouseMode.NOOP;
+				this.menu.hide();
+			} else {
+				const newMode = modeForKey(code);
+				if (newMode != null && this.mouseMode !== newMode) {
+					if (this.menuHandlers.trackMouse(this.mouseMode)) {
+						p("entering mode " + newMode);
+						this.mouseMode = newMode;
+						this.menu.hide();
+					} else {
+						p("not entering " + newMode + " due to current menu selection");
+					}
+				}
+			}
+		}
+
+		onKeyRelease(event: any) {
+			const code: number = event.get_key_code();
+			const fromState = modeForKey(code);
+			if (fromState != null && this.mouseMode == fromState) {
+				p("ending mode " + fromState);
+				this.mouseMode = MouseMode.NOOP;
+			}
 		}
 
 		destroy() {
