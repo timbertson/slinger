@@ -59,6 +59,9 @@ module Menu {
 		J = 44,
 		K = 45,
 		L = 46,
+		MINUS = 20,
+		EQUAL = 21,
+		RETURN = 36,
 	}
 
 	export module Selection {
@@ -69,6 +72,13 @@ module Menu {
 		}
 		export function eqTo(a: Selection, ring: Ring, location: number) {
 			return a.ring == ring && a.index == location;
+		}
+
+		export function Inner(sel: InnerSelection): Selection {
+			return { ring: Ring.INNER, index: sel };
+		}
+		export function Outer(sel: Anchor): Selection {
+			return { ring: Ring.OUTER, index: sel };
 		}
 	}
 
@@ -286,15 +296,9 @@ module Menu {
 				if (radius <= this.INNER_RADIUS) {
 					this.updateSelection(Selection.None);
 				} else if (radius < this.MID_RADIUS) {
-					this.updateSelection({
-						ring: Ring.INNER,
-						index: innerIndex(angle),
-					});
+					this.updateSelection(Selection.Inner(innerIndex(angle)));
 				} else {
-					this.updateSelection({
-						ring: Ring.OUTER,
-						index: outerIndex(angle),
-					});
+					this.updateSelection(Selection.Outer(outerIndex(angle)));
 				}
 			}
 			this.preview.onMouseMove(mode, event);
@@ -319,6 +323,60 @@ module Menu {
 			}
 		}
 
+		applyDirection(direction: Direction) {
+			switch (this.selection.ring) {
+				case Ring.NONE:
+					switch (direction) {
+						case Direction.UP: this.updateSelection(Selection.Outer(Anchor.TOP)); break;
+						case Direction.DOWN: this.updateSelection(Selection.Outer(Anchor.BOTTOM)); break;
+						case Direction.LEFT: this.updateSelection(Selection.Outer(Anchor.LEFT)); break;
+						case Direction.RIGHT: this.updateSelection(Selection.Outer(Anchor.RIGHT)); break;
+					}
+				break;
+
+				case Ring.INNER:
+					// noop
+				break;
+
+				case Ring.OUTER:
+					const currentLocation = this.selection.index as Anchor;
+					switch (direction) {
+						case Direction.UP:
+							switch (currentLocation) {
+								case Anchor.LEFT: this.updateSelection(Selection.Outer(Anchor.TOPLEFT)); break;
+								case Anchor.RIGHT: this.updateSelection(Selection.Outer(Anchor.TOPRIGHT)); break;
+								default: this.updateSelection(Selection.Outer(Anchor.TOP)); break;
+							}
+						break;
+
+						case Direction.DOWN:
+							switch (currentLocation) {
+								case Anchor.LEFT: this.updateSelection(Selection.Outer(Anchor.BOTTOMLEFT)); break;
+								case Anchor.RIGHT: this.updateSelection(Selection.Outer(Anchor.BOTTOMRIGHT)); break;
+								default: this.updateSelection(Selection.Outer(Anchor.BOTTOM)); break;
+							}
+						break;
+
+						case Direction.LEFT:
+							switch (currentLocation) {
+								case Anchor.TOP: this.updateSelection(Selection.Outer(Anchor.TOPLEFT)); break;
+								case Anchor.BOTTOM: this.updateSelection(Selection.Outer(Anchor.BOTTOMLEFT)); break;
+								default: this.updateSelection(Selection.Outer(Anchor.LEFT)); break;
+							}
+						break;
+
+						case Direction.RIGHT:
+							switch (currentLocation) {
+								case Anchor.TOP: this.updateSelection(Selection.Outer(Anchor.TOPRIGHT)); break;
+								case Anchor.BOTTOM: this.updateSelection(Selection.Outer(Anchor.BOTTOMRIGHT)); break;
+								default: this.updateSelection(Selection.Outer(Anchor.RIGHT)); break;
+							}
+						break;
+					}
+				break;
+			}
+		}
+
 		getSelection(): Selection {
 			return this.selection;
 		}
@@ -334,6 +392,28 @@ module Menu {
 		switch(key) {
 			case KeyCode.SHIFT: return MouseMode.MOVE;
 			case KeyCode.ALT: return MouseMode.RESIZE;
+			default: return null;
+		}
+	}
+
+	function directionForKey(key: KeyCode): Direction {
+		switch(key) {
+			case KeyCode.H: return Direction.LEFT;
+			case KeyCode.J: return Direction.DOWN;
+			case KeyCode.K: return Direction.UP;
+			case KeyCode.L: return Direction.RIGHT;
+			default: return null;
+		}
+	}
+
+	function selectionForKey(key: KeyCode): Selection {
+		switch(key) {
+			case KeyCode.MINUS:
+				return { ring: Ring.INNER, index: InnerSelection.MINIMIZE };
+
+			case KeyCode.EQUAL:
+				return { ring: Ring.INNER, index: InnerSelection.MAXIMIZE };
+
 			default: return null;
 		}
 	}
@@ -417,6 +497,8 @@ module Menu {
 			p('keypress: ' + code);
 			if (code == KeyCode.ESC) {
 				this.complete(false);
+			} else if (code == KeyCode.RETURN) {
+				this.complete(true);
 			} else if (code == KeyCode.SPACE || code == KeyCode.TAB) {
 				p("entering NOOP(drag) mode");
 				this.menuHandlers.resetTracking();
@@ -424,14 +506,23 @@ module Menu {
 				this.menu.hide();
 			} else {
 				const newMode = modeForKey(code);
-				if (newMode != null && this.mouseMode !== newMode) {
-					if (this.menuHandlers.trackMouse(this.mouseMode)) {
-						p("entering mode " + newMode);
-						this.mouseMode = newMode;
-						this.menu.hide();
-					} else {
-						p("not entering " + newMode + " due to current menu selection");
+				var direction, selection;
+
+				if (newMode !== null) {
+					if (this.mouseMode !== newMode) {
+						if (this.menuHandlers.trackMouse(this.mouseMode)) {
+							p("entering mode " + newMode);
+							this.mouseMode = newMode;
+							this.menu.hide();
+						} else {
+							p("not entering " + newMode + " due to current menu selection");
+						}
 					}
+				} else if ((direction = directionForKey(code)) !== null) {
+					this.menuHandlers.applyDirection(direction);
+				} else if ((selection = selectionForKey(code)) !== null) {
+					this.menuHandlers.updateSelection(selection);
+					this.complete(true);
 				}
 			}
 		}
@@ -460,7 +551,7 @@ module Menu {
 				this.onSelect(Action.CANCEL, null);
 			} else {
 				const selection = this.menuHandlers.getSelection();
-				if (Selection.eq({ ring: Ring.INNER, index: InnerSelection.MINIMIZE }, selection)) {
+				if (Selection.eqTo(selection, Ring.INNER, InnerSelection.MINIMIZE)) {
 					this.onSelect(Action.MINIMIZE, null);
 				} else {
 					const rect = this.preview.getRect()

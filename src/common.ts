@@ -96,6 +96,13 @@ const enum Anchor {
 	BOTTOMLEFT,
 }
 
+const enum Direction {
+	LEFT = 0,
+	UP,
+	RIGHT,
+	DOWN,
+}
+
 const enum Axis {
 	x = 'x',
 	y = 'y'
