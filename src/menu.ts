@@ -59,6 +59,10 @@ module Menu {
 		J = 44,
 		K = 45,
 		L = 46,
+		UP = 111,
+		DOWN = 116,
+		LEFT = 113,
+		RIGHT = 114,
 		MINUS = 20,
 		EQUAL = 21,
 		RETURN = 36,
@@ -398,10 +402,10 @@ module Menu {
 
 	function directionForKey(key: KeyCode): Direction {
 		switch(key) {
-			case KeyCode.H: return Direction.LEFT;
-			case KeyCode.J: return Direction.DOWN;
-			case KeyCode.K: return Direction.UP;
-			case KeyCode.L: return Direction.RIGHT;
+			case KeyCode.K: case KeyCode.UP: return Direction.UP;
+			case KeyCode.J: case KeyCode.DOWN: return Direction.DOWN;
+			case KeyCode.H: case KeyCode.LEFT: return Direction.LEFT;
+			case KeyCode.L: case KeyCode.RIGHT: return Direction.RIGHT;
 			default: return null;
 		}
 	}
@@ -506,7 +510,6 @@ module Menu {
 				this.menu.hide();
 			} else {
 				const newMode = modeForKey(code);
-				var direction, selection;
 
 				if (newMode !== null) {
 					if (this.mouseMode !== newMode) {
@@ -518,11 +521,15 @@ module Menu {
 							p("not entering " + newMode + " due to current menu selection");
 						}
 					}
-				} else if ((direction = directionForKey(code)) !== null) {
-					this.menuHandlers.applyDirection(direction);
-				} else if ((selection = selectionForKey(code)) !== null) {
-					this.menuHandlers.updateSelection(selection);
-					this.complete(true);
+				} else if (this.mouseMode == MouseMode.MENU) {
+					const direction = directionForKey(code);
+					const selection = selectionForKey(code);
+					if (direction !== null) {
+						this.menuHandlers.applyDirection(direction);
+					} else if (selection !== null) {
+						this.menuHandlers.updateSelection(selection);
+						this.complete(true);
+					}
 				}
 			}
 		}
