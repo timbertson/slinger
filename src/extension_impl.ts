@@ -1,6 +1,6 @@
 /// <reference path="common.ts" />
 /// <reference path="extension_settings.ts" />
-/// <reference path="drawing.ts" />
+/// <reference path="menu.ts" />
 /// <reference path="logging.ts" />
 
 const Main = imports.ui.main;
@@ -28,7 +28,7 @@ function failsafe(fn: Function) {
 
 class Extension {
 	private disable_actions: Array<Function>;
-	menu: Drawing.Menu;
+	menu: Menu.Menu;
 
 	constructor() {
 	}
@@ -101,7 +101,7 @@ class Extension {
 			size: { x: metaRect.width, y: metaRect.height },
 		};
 
-		this.menu = new Drawing.Menu(
+		this.menu = new Menu.Menu(
 			global.window_group,
 			{ size, pos },
 			{ x: mousePos[1], y: mousePos[2]},
@@ -131,13 +131,13 @@ class Extension {
 	}
 
 	onLayoutSelect(window: MetaWindow, offset: Point) {
-		return function(action: Drawing.Action, rect: Rect) {
+		return function(action: Menu.Action, rect: Rect) {
 			switch (action) {
-				case Drawing.Action.MINIMIZE:
+				case Menu.Action.MINIMIZE:
 					window.minimize();
 				break;
 				
-				case Drawing.Action.RESIZE:
+				case Menu.Action.RESIZE:
 					if(window.get_maximized() !== 0) {
 						window.unmaximize(Meta.MaximizeFlags.VERTICAL | Meta.MaximizeFlags.HORIZONTAL);
 					}
@@ -147,7 +147,7 @@ class Extension {
 						rect.pos.y + offset.y,
 						rect.size.x,
 						rect.size.y);
-				case Drawing.Action.CANCEL: // fallthrough
+				case Menu.Action.CANCEL: // fallthrough
 					Main.activateWindow(window, global.get_current_time());
 				break;
 			}

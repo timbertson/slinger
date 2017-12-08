@@ -1,5 +1,5 @@
 /// <reference path="common.ts" />
-/// <reference path="drawing.ts" />
+/// <reference path="menu.ts" />
 
 module ClutterTest {
 	const Clutter = imports.gi.Clutter;
@@ -10,8 +10,8 @@ module ClutterTest {
 
 	const screen: Rect = { pos: {x:0,y:0}, size: { x: 640, y: 480 } };
 	const windowRect: Rect = { pos: {x:50,y:50}, size: { x: 200, y: 300 } };
-	const onSelect = function(_action: Drawing.Action, _rect:Rect) {};
-	var menu = new Drawing.Menu(stage, screen, {x: 320, y: 320}, windowRect, onSelect);
+	const onSelect = function(_action: Menu.Action, _rect:Rect) {};
+	var menu = new Menu.Menu(stage, screen, {x: 320, y: 320}, windowRect, onSelect);
 	menu.ui.set_background_color(new Clutter.Color({
 		red: 128,
 		green: 128,
@@ -24,7 +24,7 @@ module ClutterTest {
 	stage.connect('button-press-event', function(_actor: any, event: any) {
 		menu.destroy();
 		const [x, y] = event.get_coords();
-		menu = new Drawing.Menu(stage, screen, {x, y}, windowRect, onSelect);
+		menu = new Menu.Menu(stage, screen, {x, y}, windowRect, onSelect);
 		menu.ui.set_background_color(new Clutter.Color({
 			red: rand(),
 			green: rand(),

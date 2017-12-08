@@ -1,25 +1,15 @@
 /// <reference path="common.ts" />
 /// <reference path="logging.ts" />
-module Drawing {
-	// const St = imports.gi.St;
-	// const Cogl = imports.gi.Cogl;
+/// <reference path="preview.ts" />
+/// <reference path="point.ts" />
+/// <reference path="rect.ts" />
+
+module Menu {
 	const Clutter = imports.gi.Clutter;
 	const Cairo = imports.cairo;
-	// const Shell = imports.gi.Shell;
 	const PI = Math.PI;
 	const TAO = 2 * PI;
 	const floor = Math.floor;
-
-	interface Grey {
-		luminance: number
-		alpha: number
-	}
-	interface Color {
-		r: number
-		g: number
-		b: number
-		a: number
-	}
 
 	export const enum Action {
 		CANCEL,
@@ -27,153 +17,37 @@ module Drawing {
 		RESIZE
 	}
 
-	const enum MouseMode {
-		MENU,
-		RESIZE,
-		MOVE,
-		NOOP
-	}
-
-	const enum Location {
-		LEFT = 0,
-		TOPLEFT,
-		TOP,
-		TOPRIGHT,
-		RIGHT,
-		BOTTOMRIGHT,
-		BOTTOM,
-		BOTTOMLEFT,
-	}
-
-	// TODO: how constant are these?
-	const enum KeyCode {
-		ESC = 9,
-		SHIFT = 50,
-		SPACE = 65,
-		CTRL = 64,
-		ALT = 133,
-		TAB = 23,
-	}
-
-	// function stringOfLocation(loc: Location): string {
+	// function stringOfLocation(loc: Anchor): string {
 	// 	switch(loc) {
-	// 		case Location.LEFT: return 'LEFT';
-	// 		case Location.TOPLEFT: return 'TOPLEFT';
-	// 		case Location.TOP: return 'TOP';
-	// 		case Location.TOPRIGHT: return 'TOPRIGHT';
-	// 		case Location.RIGHT: return 'RIGHT';
-	// 		case Location.BOTTOMRIGHT: return 'BOTTOMRIGHT';
-	// 		case Location.BOTTOM: return 'BOTTOM';
-	// 		case Location.BOTTOMLEFT: return 'BOTTOMLEFT';
+	// 		case Anchor.LEFT: return 'LEFT';
+	// 		case Anchor.TOPLEFT: return 'TOPLEFT';
+	// 		case Anchor.TOP: return 'TOP';
+	// 		case Anchor.TOPRIGHT: return 'TOPRIGHT';
+	// 		case Anchor.RIGHT: return 'RIGHT';
+	// 		case Anchor.BOTTOMRIGHT: return 'BOTTOMRIGHT';
+	// 		case Anchor.BOTTOM: return 'BOTTOM';
+	// 		case Anchor.BOTTOMLEFT: return 'BOTTOMLEFT';
 	// 		default: return '<unknown>';
 	// 	}
 	// }
 
-	export function oppose(loc: Location): Location {
-		return (loc + 4) % 8; // Magic!
-	}
-
-	const enum InnerSelection {
+	export const enum InnerSelection {
 		MAXIMIZE = 0,
 		MINIMIZE
 	}
 
-	const enum Ring {
+	export const enum Ring {
 		NONE = 0,
 		INNER,
 		OUTER
 	}
 
-	const enum Axis {
-		x = 'x',
-		y = 'y'
-	}
-
-	interface Selection {
+	export interface Selection {
 		ring: Ring
 		index: number
 	}
 
-	module Point {
-		export function scale(scale: Point, p: Point): Point {
-			return {
-				x: floor(p.x * scale.x),
-				y: floor(p.y * scale.y)
-			}
-		}
-
-		export function scaleConstant(scale: number, p: Point): Point {
-			return {
-				x: floor(p.x * scale),
-				y: floor(p.y * scale)
-			}
-		}
-
-		export function copy(p: Point): Point {
-			return { x: p.x, y: p.y };
-		}
-
-		export function add(a: Point, b: Point): Point {
-			return {
-				x: a.x + b.x,
-				y: a.y + b.y
-			}
-		}
-
-		export function scaleAxis(axis: Axis, scale: number, p: Point): Point {
-			const ret = copy(p);
-			ret[axis] = floor(p[axis] * scale);
-			return ret;
-		}
-
-		export function subtract(a: Point, b: Point): Point {
-			return {
-				x: a.x - b.x,
-				y: a.y- b.y
-			}
-		}
-
-		export const ZERO = { x: 0, y: 0 };
-
-		export function ofEvent(event: any, origin: Point): Point {
-			const [absx,absy] = event.get_coords();
-			if (origin == null) {
-				return { x: absx, y: absy };
-			} else {
-				const x = absx - origin.x;
-				const y = absy - origin.y;
-				return { x, y };
-			}
-		}
-	}
-
-	module Rect {
-		export function copy(r: Rect): Rect {
-			return { pos: Point.copy(r.pos), size: Point.copy(r.size) };
-		}
-
-		export function closestCorner(r: Rect, p: Point): Location {
-			const pow = Math.pow;
-			const sqrt = Math.sqrt;
-			const near = r.pos;
-			const far = { x: r.pos.x + r.size.x, y: r.pos.y + r.size.y };
-			const tl = sqrt(pow(p.x - near.x, 2) + pow(p.y - near.y, 2));
-			const tr = sqrt(pow(p.x -  far.x, 2) + pow(p.y - near.y, 2));
-			const br = sqrt(pow(p.x -  far.x, 2) + pow(p.y -  far.y, 2));
-			const bl = sqrt(pow(p.x - near.x, 2) + pow(p.y -  far.y, 2));
-			const corners = [tl, tr, bl, br];
-			log("Closest corners: " + JSON.stringify(corners));
-			corners.sort(function(a,b) { return a - b });
-			log("Closest corners (sorted): " + JSON.stringify(corners));
-			const min = corners[0];
-			if (min == tl) return Location.TOPLEFT;
-			if (min == tr) return Location.TOPRIGHT;
-			if (min == br) return Location.BOTTOMRIGHT;
-			return Location.BOTTOMLEFT;
-		}
-	}
-
-	module Selection {
+	export module Selection {
 		export const None: Selection = { ring: Ring.NONE, index: 0 }
 
 		export function eq(a: Selection, b: Selection) {
@@ -201,7 +75,7 @@ module Drawing {
 		private currentMouseRelative: Point
 		private selection: Selection
 
-		constructor(menuSize: Point, origin: Point, canvas: any, preview: LayoutPreview) {
+		constructor(menuSize: Point, origin: Point, canvas: any, preview: Preview.LayoutPreview) {
 			this.currentMouseRelative = Point.ZERO;
 			this.origin = origin;
 
@@ -220,7 +94,6 @@ module Drawing {
 			const DARK = floatColor({ r: 18, g: 36, b: 48, a: 200 });
 			const LIGHT = floatColor({ r: 66, g: 79, b: 92, a: 237 });
 			const BG = { luminance: 0.7, alpha: 0.7 };
-			// const ACTIVE = floatColor({ r: 123, g: 189, b: 226, a: 255 });
 			const ACTIVE = floatColor({ r: 45, g: 155, b: 203, a: 255 });
 
 			const ANGLE_HALF = PI;
@@ -252,7 +125,7 @@ module Drawing {
 				activeColor(cr, selection, Ring.INNER, location)
 			}
 
-			function activeColorOuter(cr: any, selection: Selection, location: Location) {
+			function activeColorOuter(cr: any, selection: Selection, location: Anchor) {
 				activeColor(cr, selection, Ring.OUTER, location)
 			}
 
@@ -308,40 +181,40 @@ module Drawing {
 
 				// right edge
 				cr.arc(0, 0, OUTER_RADIUS - (EDGE_WIDTH/2), -ANGLE_SIXTEENTH, ANGLE_SIXTEENTH);
-				activeColorOuter(cr, selection, Location.RIGHT);
+				activeColorOuter(cr, selection, Anchor.RIGHT);
 				cr.stroke();
 
 				// left edge
 				cr.arc(0, 0, OUTER_RADIUS - (EDGE_WIDTH/2), ANGLE_HALF - ANGLE_SIXTEENTH, ANGLE_HALF + ANGLE_SIXTEENTH);
-				activeColorOuter(cr, selection, Location.LEFT);
+				activeColorOuter(cr, selection, Anchor.LEFT);
 				cr.stroke();
 
 				// bottom edge
 				cr.arc(0, 0, OUTER_RADIUS - (EDGE_WIDTH/2), ANGLE_QUARTER - ANGLE_SIXTEENTH, ANGLE_QUARTER + ANGLE_SIXTEENTH);
-				activeColorOuter(cr, selection, Location.BOTTOM);
+				activeColorOuter(cr, selection, Anchor.BOTTOM);
 				cr.stroke();
 
 				// top edge
 				cr.arc(0, 0, OUTER_RADIUS - (EDGE_WIDTH/2), -ANGLE_QUARTER - ANGLE_SIXTEENTH, -ANGLE_QUARTER + ANGLE_SIXTEENTH);
-				activeColorOuter(cr, selection, Location.TOP);
+				activeColorOuter(cr, selection, Anchor.TOP);
 				cr.stroke();
 
 
 				// corner shades:
 				cr.arc(CORNER_DISTANCE, CORNER_DISTANCE, CORNER_WIDTH, 0, TAO);
-				activeColorOuter(cr, selection, Location.BOTTOMRIGHT);
+				activeColorOuter(cr, selection, Anchor.BOTTOMRIGHT);
 				cr.fill();
 
 				cr.arc(-CORNER_DISTANCE, CORNER_DISTANCE, CORNER_WIDTH, 0, TAO);
-				activeColorOuter(cr, selection, Location.BOTTOMLEFT);
+				activeColorOuter(cr, selection, Anchor.BOTTOMLEFT);
 				cr.fill();
 
 				cr.arc(-CORNER_DISTANCE, -CORNER_DISTANCE, CORNER_WIDTH, 0, TAO);
-				activeColorOuter(cr, selection, Location.TOPLEFT);
+				activeColorOuter(cr, selection, Anchor.TOPLEFT);
 				cr.fill();
 
 				cr.arc(CORNER_DISTANCE, -CORNER_DISTANCE, CORNER_WIDTH, 0, TAO);
-				activeColorOuter(cr, selection, Location.TOPRIGHT);
+				activeColorOuter(cr, selection, Anchor.TOPRIGHT);
 				cr.fill();
 
 				// mid buttons:
@@ -374,7 +247,7 @@ module Drawing {
 				return Clutter.EVENT_STOP;
 			}
 
-			this.updateSelection = function(newSelection: Selection) {
+			this.updateSelection = function(newSelection: Menu.Selection) {
 				if (!Selection.eq(self.selection, newSelection)) {
 					p("updateSelection(" + JSON.stringify(newSelection) + ")");
 					self.selection = newSelection;
@@ -431,289 +304,13 @@ module Drawing {
 		}
 	}
 
-	class LayoutPreview {
-		private size: Point
-		private bounds: Rect
-		private base: Rect
-		private preview: Rect
-		private selection: Selection;
-		private windowRect: Rect;
-		ui: any
-		resizeCorner: Location;
-		trackingOrigin: Point;
-
-		constructor(size: Point, windowRect: Rect) {
-			this.size = size;
-			this.bounds = { pos: Point.ZERO, size: this.size };
-			this.ui = new Clutter.Actor();
-			this.ui.set_background_color(new Clutter.Color({
-				red: 80,
-				green: 158,
-				blue: 255,
-				alpha: 125
-			}));
-			this.resizeCorner = null;
-			this.selection = Selection.None;
-			this.windowRect = windowRect;
-			this.ui.hide();
-		}
-
-		private selectOuter(loc: Location): Rect {
-			const size = this.size;
-			switch (loc) {
-				case Location.LEFT:
-					return {
-						pos: Point.ZERO,
-						size: Point.scale({ x: 0.5, y: 1 }, size),
-					}
-				case Location.TOPLEFT:
-					return {
-						pos: Point.ZERO,
-						size: Point.scaleConstant(0.5, size),
-					}
-				case Location.TOP:
-					return {
-						pos: Point.ZERO,
-						size: Point.scale({ x: 1, y: 0.5 }, size),
-					}
-				case Location.TOPRIGHT:
-					return {
-						pos: Point.scale({ x: 0.5, y: 0 }, size),
-						size: Point.scaleConstant(0.5, size),
-					}
-				case Location.RIGHT:
-					return {
-						pos: Point.scale({ x: 0.5, y: 0 }, size),
-						size: Point.scale({ x: 0.5, y: 1 }, size),
-					}
-				case Location.BOTTOMRIGHT:
-					return {
-						pos: Point.scaleConstant(0.5, size),
-						size: Point.scaleConstant(0.5, size),
-					}
-				case Location.BOTTOM:
-					return {
-						pos: Point.scale({ x: 0, y: 0.5 }, size),
-						size: Point.scale({ x: 1, y: 0.5 }, size),
-					}
-				case Location.BOTTOMLEFT:
-					return {
-						pos: Point.scale({ x: 0, y: 0.5}, size),
-						size: Point.scaleConstant(0.5, size),
-					}
-			}
-			return null;
-		}
-
-		private selectInner(sel: InnerSelection): Rect {
-			switch (sel) {
-				case InnerSelection.MAXIMIZE:
-					return {
-						pos: Point.ZERO,
-						size: this.size,
-					}
-
-				case InnerSelection.MINIMIZE:
-				default:
-					return null;
-			}
-		}
-
-		trackMouse(prevMode: MouseMode, origin: Point): boolean {
-			if (prevMode == MouseMode.MENU) {
-				switch (this.selection.ring) {
-					case Ring.INNER:
-						return false;
-
-					case Ring.OUTER:
-						this.resizeCorner = oppose(this.selection.index);
-						this.trackingOrigin = origin;
-						break;
-
-					case Ring.NONE:
-						this.resetTracking(origin);
-						break;
-				}
-			} else {
-				this.resetTracking(origin);
-			}
-
-			this.base = this.preview; // capture whatever we have as a base
-			this.updateUi();
-			return true;
-		}
-
-		resetTracking(origin: Point) {
-			if (this.preview == null) {
-				this.preview = this.windowRect;
-			}
-			this.base = this.preview;
-			this.resizeCorner = Rect.closestCorner(this.preview, origin);
-			this.trackingOrigin = origin;
-			this.updateUi();
-		}
-
-		onMouseMove(mode: MouseMode, event: any) {
-			switch (mode) {
-				case MouseMode.RESIZE:
-					if (this.resizeCorner === null) {
-						return;
-					}
-					var diff = Point.ofEvent(event, this.trackingOrigin);
-					this.preview = LayoutPreview.applyResize(this.resizeCorner, diff, this.base, this.bounds);
-					// p('move diff ' + JSON.stringify(diff)
-					// 	+ ' (from origin ' + JSON.stringify(this.trackingOrigin) + ')'
-					// 	+ ' turned base ' + JSON.stringify(this.base)
-					// 	+ ' into rect ' + JSON.stringify(this.preview)
-					// );
-				break;
-
-				case MouseMode.MOVE:
-					var diff = Point.ofEvent(event, this.trackingOrigin);
-					this.preview = LayoutPreview.applyMove(diff, this.base, this.bounds);
-					// p('move diff ' + JSON.stringify(diff)
-					// 	+ ' (from origin ' + JSON.stringify(this.trackingOrigin) + ')'
-					// 	+ ' turned base ' + JSON.stringify(this.base)
-					// 	+ ' into rect ' + JSON.stringify(this.preview)
-					// );
-				break;
-
-				default:
-					return;
-			}
-			this.updateUi();
-		}
-
-		static applyMove(diff: Point, base: Rect, bounds: Rect): Rect {
-			const ret = Rect.copy(base);
-			const scaled = Point.scaleConstant(MANIPULATION_SCALE, diff);
-			// Note: this doesn't consider bounds.pos, it's assumed to be (0,0)
-			ret.pos.x = Math.max(0, Math.min(ret.pos.x + scaled.x, bounds.size.x - ret.size.x));
-			ret.pos.y = Math.max(0, Math.min(ret.pos.y + scaled.y, bounds.size.y - ret.size.y));
-			return ret;
-		}
-
-		static applyResize(location: Location, diff: Point, base: Rect, bounds: Rect): Rect {
-			const ret = Rect.copy(base);
-			const scaled = Point.scaleConstant(MANIPULATION_SCALE, diff);
-			function between(min: number, x: number, max: number): number {
-				// p('between('+min+', '+x+', '+max+')');
-				if (min > x) return min;
-				if (max < x) return max;
-				return x;
-			}
-
-			function moveNear(axis: Axis) {
-				// minimum diff is enough to bring this edge to 0 (i.e. invert the current pos)
-				// maximum diff is enough to bring this edge to ther other side of this rect, minus MINIMUM_SIZE
-				// p('moveNear['+axis+']');
-				const diff = between(-ret.pos[axis], scaled[axis], ret.size[axis] - MINIMUM_SIZE);
-				ret.pos[axis] += diff;
-				ret.size[axis] -= diff;
-			}
-
-			function moveFar(axis: Axis) {
-				// minimum diff is enough to bring this edge to the other side of this rect, plus MINIMUM_SIZE
-				// maximum diff is enough to bring this edge to the right bounds
-				// p('moveFar['+axis+']');
-				const diff = between(MINIMUM_SIZE - ret.size[axis], scaled[axis], bounds.size[axis] - ret.pos[axis] - ret.size[axis]);
-				ret.size[axis] += diff;
-			}
-
-			switch (location) {
-				case Location.LEFT:
-					moveNear(Axis.x);
-				break;
-
-				case Location.TOPLEFT:
-					moveNear(Axis.x);
-					moveNear(Axis.y);
-				break;
-	
-				case Location.TOP:
-					moveNear(Axis.y);
-				break;
-
-				case Location.TOPRIGHT:
-					moveNear(Axis.y);
-					moveFar(Axis.x);
-				break;
-
-				case Location.RIGHT:
-					moveFar(Axis.x);
-				break;
-					
-				case Location.BOTTOMRIGHT:
-					moveFar(Axis.x);
-					moveFar(Axis.y);
-				break;
-
-				case Location.BOTTOM:
-					moveFar(Axis.y);
-				break;
-
-				case Location.BOTTOMLEFT:
-					moveNear(Axis.x);
-					moveFar(Axis.y);
-				break;
-
-				default:
-					throw new Error("unknown location: " + location);
-			}
-
-			return ret;
-		}
-
-		updateSelection(sel: Selection) {
-			this.selection = sel;
-			switch (sel.ring) {
-				case Ring.OUTER:
-					this.base = this.selectOuter(sel.index);
-				break;
-
-				case Ring.INNER:
-					this.base = this.selectInner(sel.index);
-				break;
-
-				case Ring.NONE:
-				default:
-					this.base = null;
-				break;
-			}
-			this.resetPreview();
-		}
-
-		private updateUi() {
-			if (this.preview == null) {
-				this.ui.hide();
-			} else {
-				this.ui.set_position(this.preview.pos.x, this.preview.pos.y);
-				this.ui.set_size(this.preview.size.x, this.preview.size.y);
-				this.ui.show();
-			}
-		}
-
-		private resetPreview() {
-			if (this.base == null) {
-				this.preview = null;
-			} else {
-				this.preview = Rect.copy(this.base);
-			}
-			this.updateUi();
-		}
-
-		getRect():Rect { return this.preview; }
-	}
 
 	type FunctionActionRectVoid = (action:Action, rect:Rect) => void
-
-	const MANIPULATION_SCALE = 2.2;
-	const MINIMUM_SIZE = 20;
 
 	export class Menu {
 		ui: any;
 		private parent: any;
-		private preview: LayoutPreview;
+		private preview: Preview.LayoutPreview;
 		private onSelect: FunctionActionRectVoid;
 		private menuHandlers: MenuHandlers;
 		private mouseMode: MouseMode;
@@ -739,7 +336,7 @@ module Drawing {
 			const position: Point = Point.subtract(Point.subtract(origin, screen.pos), Point.scaleConstant(0.5, menuSize));
 			menu.set_position(position.x, position.y);
 
-			const preview = this.preview = new LayoutPreview(screen.size, windowRect);
+			const preview = this.preview = new Preview.LayoutPreview(screen.size, windowRect);
 			const handlers = this.menuHandlers = new MenuHandlers(menuSize, origin, canvas, preview);
 			canvas.connect('draw', handlers.draw);
 			backgroundActor.connect('motion-event', function(_actor: any, event: any) {
