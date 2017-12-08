@@ -145,7 +145,7 @@ class Extension {
 				break;
 				
 				case Menu.Action.RESIZE:
-					if(window.get_maximized() !== 0) {
+					if(window.get_maximized() !== CBoolean.False) {
 						window.unmaximize(Meta.MaximizeFlags.VERTICAL | Meta.MaximizeFlags.HORIZONTAL);
 					}
 

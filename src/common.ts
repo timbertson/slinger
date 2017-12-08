@@ -19,11 +19,26 @@ interface MetaRect {
 	height: number
 }
 
+enum CBoolean {
+	False = 0,
+	True = 1
+}
+type MetaWindow = {
+	get_frame_rect(): MetaRect
+	minimize(): void
+	get_maximized(): CBoolean
+	unmaximize(flags: number): void
+	move_resize_frame(userAction: boolean,
+		x: number,
+		y: number,
+		w: number,
+		h: number): void
+};
 // TODO ...
-type MetaWindow = any;
 type ClutterModule = any;
 type Actor = any;
 type ClutterColor = any;
+
 type ClutterMouseEvent = {
 	get_coords(): Array<number>
 };
@@ -79,16 +94,6 @@ const enum Anchor {
 	BOTTOMRIGHT,
 	BOTTOM,
 	BOTTOMLEFT,
-}
-
-// TODO: how constant are these?
-const enum KeyCode {
-	ESC = 9,
-	SHIFT = 50,
-	SPACE = 65,
-	CTRL = 64,
-	ALT = 133,
-	TAB = 23,
 }
 
 const enum Axis {

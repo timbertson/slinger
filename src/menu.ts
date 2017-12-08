@@ -47,6 +47,20 @@ module Menu {
 		index: number
 	}
 
+	// TODO: how constant are these?
+	const enum KeyCode {
+		ESC = 9,
+		SHIFT = 50,
+		SPACE = 65,
+		CTRL = 64,
+		ALT = 133,
+		TAB = 23,
+		H = 43,
+		J = 44,
+		K = 45,
+		L = 46,
+	}
+
 	export module Selection {
 		export const None: Selection = { ring: Ring.NONE, index: 0 }
 
@@ -400,7 +414,7 @@ module Menu {
 
 		onKeyPress(event: ClutterKeyEvent) {
 			const code: number = event.get_key_code();
-			// p('keypress: ' + code);
+			p('keypress: ' + code);
 			if (code == KeyCode.ESC) {
 				this.complete(false);
 			} else if (code == KeyCode.SPACE || code == KeyCode.TAB) {
