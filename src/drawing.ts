@@ -743,6 +743,7 @@ module Drawing {
 			const handlers = this.menuHandlers = new MenuHandlers(menuSize, origin, canvas, preview);
 			canvas.connect('draw', handlers.draw);
 			backgroundActor.connect('motion-event', function(_actor: any, event: any) {
+				// p("mouseMove with mode = " + self.mouseMode);
 				self.menuHandlers.onMouseMove(self.mouseMode, event);
 				self.preview.onMouseMove(self.mouseMode, event);
 				return Clutter.EVENT_STOP;
@@ -756,26 +757,36 @@ module Drawing {
 			Clutter.grab_pointer(backgroundActor);
 			Clutter.grab_keyboard(backgroundActor);
 
+			function modeForKey(key: KeyCode) {
+				switch(key) {
+					case KeyCode.SHIFT: return MouseMode.MOVE;
+					case KeyCode.ALT: return MouseMode.RESIZE;
+					default: return null;
+				}
+			}
+
 			// var suspendedMouseMode = MouseMode.NOOP;
 			backgroundActor.connect('key-press-event', function(_actor: any, event: any) {
 				const code: number = event.get_key_code();
-				p('keypress: ' + code);
+				// p('keypress: ' + code);
 				if (code == KeyCode.ESC) {
 					self.complete(false);
 				} else if (code == KeyCode.SPACE || code == KeyCode.TAB) {
+					p("entering NOOP(drag) mode");
 					handlers.updateSelection(Selection.None);
 					self.preview.resetTracking(handlers.getMousePosition());
 					self.mouseMode = MouseMode.NOOP;
 					menu.hide();
-				} else if (code == KeyCode.ALT && self.mouseMode !== MouseMode.RESIZE) {
-					if (self.preview.trackMouse(self.mouseMode, handlers.getMousePosition())) {
-						self.mouseMode = MouseMode.RESIZE;
-						menu.hide();
-					}
-				} else if (code == KeyCode.SHIFT && self.mouseMode !== MouseMode.MOVE) {
-					if (self.preview.trackMouse(self.mouseMode, handlers.getMousePosition())) {
-						self.mouseMode = MouseMode.MOVE;
-						menu.hide();
+				} else {
+					const newMode = modeForKey(code);
+					if (newMode != null && self.mouseMode !== newMode) {
+						if (self.preview.trackMouse(self.mouseMode, handlers.getMousePosition())) {
+							p("entering mode " + newMode);
+							self.mouseMode = newMode;
+							menu.hide();
+						} else {
+							p("not entering " + newMode + " due to current menu selection");
+						}
 					}
 				}
 				return Clutter.EVENT_STOP;
@@ -783,9 +794,9 @@ module Drawing {
 
 			backgroundActor.connect('key-release-event', function(_actor: any, event: any) {
 				const code: number = event.get_key_code();
-				// p('keyup: ' + code);
-				if (code == KeyCode.SHIFT || code == KeyCode.ALT || code == KeyCode.SPACE) {
-					// suspend operations!
+				const fromState = modeForKey(code);
+				if (fromState != null && self.mouseMode == fromState) {
+					p("ending mode " + fromState);
 					self.mouseMode = MouseMode.NOOP;
 				}
 				return Clutter.EVENT_STOP;
@@ -799,7 +810,6 @@ module Drawing {
 			const coverPane = new Clutter.Actor({ reactive: true });
 			coverPane.set_reactive(true);
 			coverPane.connect('event', function () {
-				p("catching event..");
 				return Clutter.EVENT_STOP;
 			});
 

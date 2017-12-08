@@ -70,11 +70,7 @@ class Extension {
 		handle('slinger-show', self.show_ui.bind(this));
 	}
 
-	private show_ui(a:any, b: any, c: any, d: any) {
-		p(a);
-		p(b);
-		p(c);
-		p(d);
+	private show_ui() {
 		this.hide_ui();
 		const display = Gdk.Display.get_default();
 		const window: MetaWindow = global.screen.get_display()['focus-window'];
