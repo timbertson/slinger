@@ -19,7 +19,7 @@ module Preview {
 		private preview: Rect
 		private selection: Menu.Selection;
 		private windowRect: Rect;
-		ui: any
+		ui: Actor
 		resizeCorner: Anchor;
 		trackingOrigin: Point;
 
@@ -134,7 +134,7 @@ module Preview {
 			this.updateUi();
 		}
 
-		onMouseMove(mode: MouseMode, event: any) {
+		onMouseMove(mode: MouseMode, event: ClutterMouseEvent) {
 			switch (mode) {
 				case MouseMode.RESIZE:
 					if (this.resizeCorner === null) {

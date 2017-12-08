@@ -24,6 +24,32 @@ type MetaWindow = any;
 type ClutterModule = any;
 type Actor = any;
 type ClutterColor = any;
+type ClutterMouseEvent = {
+	get_coords(): Array<number>
+};
+type ClutterKeyEvent = {
+	get_key_code(): number
+};
+type ClutterCanvas = {
+	invalidate(): void
+}
+type ClutterContext = {
+	restore(): void
+	fill(): void
+	stroke(): void
+	clip(): void
+	save(): void
+	paint(): void
+	restore(): void
+	resetClip(): void
+	setOperator(op: number): void
+	setLineWidth(width: number): void
+	rectangle(x: number, y: number, w: number, h: number): void
+	arc(x: number, y: number, radius: number, start: number, end: number): void
+	rotate(radians: number): void
+	translate(x: number, y: number): void
+	setSourceRGBA(r: number, g: number, b: number, a: number): void
+}
 
 
 interface Grey {

@@ -10,8 +10,15 @@ const Gdk = imports.gi.Gdk;
 const Clutter = imports.gi.Clutter;
 
 interface Global {
-	screen: any
-	window_group: any
+	screen: {
+		get_display(): {
+			'focus-window': MetaWindow
+		}
+		get_workspace_by_index(i: number): {
+			get_work_area_for_monitor(i: number): MetaRect
+		}
+	}
+	window_group: {}
 	get_current_time: () => number
 }
 declare var global: Global;

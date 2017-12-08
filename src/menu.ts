@@ -90,9 +90,9 @@ module Menu {
 		private INNER_RADIUS: number;
 		private MID_RADIUS: number;
 		private preview: Preview.LayoutPreview;
-		private canvas: any;
+		private canvas: ClutterCanvas;
 
-		constructor(menuSize: Point, origin: Point, canvas: any, preview: Preview.LayoutPreview) {
+		constructor(menuSize: Point, origin: Point, canvas: ClutterCanvas, preview: Preview.LayoutPreview) {
 			this.currentMouseRelative = Point.ZERO;
 			this.origin = origin;
 			this.preview = preview;
@@ -117,14 +117,14 @@ module Menu {
 
 			this.selection = Selection.None;
 
-			function setGrey(cr: any, grey: Grey) {
+			function setGrey(cr: ClutterContext, grey: Grey) {
 				cr.setSourceRGBA(grey.luminance, grey.luminance, grey.luminance, grey.alpha);
 			}
-			function setColor(cr: any, c: Color) {
+			function setColor(cr: ClutterContext, c: Color) {
 				cr.setSourceRGBA(c.r, c.g, c.b, c.a);
 			}
 
-			function activeColor(cr: any, selection: Selection, ring: Ring, location: number) {
+			function activeColor(cr: ClutterContext, selection: Selection, ring: Ring, location: number) {
 				if (Selection.eqTo(selection, ring, location)) {
 					setColor(cr, ACTIVE);
 				} else {
@@ -132,16 +132,16 @@ module Menu {
 				}
 			}
 
-			function activeColorInner(cr: any, selection: Selection, location: InnerSelection) {
+			function activeColorInner(cr: ClutterContext, selection: Selection, location: InnerSelection) {
 				activeColor(cr, selection, Ring.INNER, location)
 			}
 
-			function activeColorOuter(cr: any, selection: Selection, location: Anchor) {
+			function activeColorOuter(cr: ClutterContext, selection: Selection, location: Anchor) {
 				activeColor(cr, selection, Ring.OUTER, location)
 			}
 
 			const self = this;
-			this.draw = function draw(_canvas: any, cr: any, _width: number, _height: number) {
+			this.draw = function draw(_canvas: ClutterCanvas, cr: ClutterContext, _width: number, _height: number) {
 				const selection = self.selection;
 				// reset surface
 				cr.save();
@@ -260,7 +260,7 @@ module Menu {
 			}
 		}
 
-		onMouseMove(mode: MouseMode, event: any): void {
+		onMouseMove(mode: MouseMode, event: ClutterMouseEvent): void {
 			const point = this.currentMouseRelative = Point.ofEvent(event, this.origin);
 			if (mode === MouseMode.MENU) {
 				const { x, y } = point;
@@ -325,15 +325,15 @@ module Menu {
 	}
 
 	export class Menu {
-		ui: any;
-		private parent: any;
+		ui: Actor;
+		private parent: Actor;
 		private preview: Preview.LayoutPreview;
 		private onSelect: FunctionActionRectVoid;
 		private menuHandlers: MenuHandlers;
-		private menu: any;
+		private menu: Actor;
 		private mouseMode: MouseMode;
 
-		constructor(parent: any, screen: Rect, origin: Point, windowRect: Rect, onSelect: FunctionActionRectVoid) {
+		constructor(parent: Actor, screen: Rect, origin: Point, windowRect: Rect, onSelect: FunctionActionRectVoid) {
 			p("creating menu at " + JSON.stringify(origin) + " with bounds " + JSON.stringify(screen));
 			const self = this;
 			this.parent = parent;
@@ -357,7 +357,7 @@ module Menu {
 			const preview = this.preview = new Preview.LayoutPreview(screen.size, windowRect);
 			const handlers = this.menuHandlers = new MenuHandlers(menuSize, origin, canvas, preview);
 			canvas.connect('draw', handlers.draw);
-			backgroundActor.connect('motion-event', function(_actor: any, event: any) {
+			backgroundActor.connect('motion-event', function(_actor: Actor, event: ClutterMouseEvent) {
 				self.menuHandlers.onMouseMove(self.mouseMode, event);
 				return Clutter.EVENT_STOP;
 			});
@@ -366,12 +366,12 @@ module Menu {
 			Clutter.grab_keyboard(backgroundActor);
 
 			// var suspendedMouseMode = MouseMode.NOOP;
-			backgroundActor.connect('key-press-event', function(_actor: any, event: any) {
+			backgroundActor.connect('key-press-event', function(_actor: Actor, event: ClutterKeyEvent) {
 				self.onKeyPress(event);
 				return Clutter.EVENT_STOP;
 			});
 
-			backgroundActor.connect('key-release-event', function(_actor: any, event: any) {
+			backgroundActor.connect('key-release-event', function(_actor: Actor, event: ClutterKeyEvent) {
 				self.onKeyRelease(event);
 				return Clutter.EVENT_STOP;
 			});
@@ -398,7 +398,7 @@ module Menu {
 			canvas.invalidate();
 		}
 
-		onKeyPress(event: any) {
+		onKeyPress(event: ClutterKeyEvent) {
 			const code: number = event.get_key_code();
 			// p('keypress: ' + code);
 			if (code == KeyCode.ESC) {
@@ -422,7 +422,7 @@ module Menu {
 			}
 		}
 
-		onKeyRelease(event: any) {
+		onKeyRelease(event: ClutterKeyEvent) {
 			const code: number = event.get_key_code();
 			const fromState = modeForKey(code);
 			if (fromState != null && this.mouseMode == fromState) {

@@ -21,7 +21,7 @@ module ClutterTest {
 
 	function rand() { return Math.floor(Math.random() * 255); }
 
-	stage.connect('button-press-event', function(_actor: any, event: any) {
+	stage.connect('button-press-event', function(_actor: Actor, event: ClutterMouseEvent) {
 		menu.destroy();
 		const [x, y] = event.get_coords();
 		menu = new Menu.Menu(stage, screen, {x, y}, windowRect, onSelect);

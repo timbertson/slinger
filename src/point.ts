@@ -40,7 +40,7 @@ module Point {
 
 	export const ZERO = { x: 0, y: 0 };
 
-	export function ofEvent(event: any, origin: Point): Point {
+	export function ofEvent(event: ClutterMouseEvent, origin: Point): Point {
 		const [absx,absy] = event.get_coords();
 		if (origin == null) {
 			return { x: absx, y: absy };

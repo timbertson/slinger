@@ -8,6 +8,10 @@ module Settings {
 	var SCHEMA_ROOT = 'org.gnome.shell.extensions.net.gfxmonk.slinger';
 	var KEYBINDINGS = SCHEMA_ROOT + '.keybindings';
 
+	type Gsettings = {
+		list_keys(): Array<String>
+	}
+
 	function get_local_gsettings(schema_path: string) {
 		var GioSSS = Gio.SettingsSchemaSource;
 
@@ -29,7 +33,7 @@ module Settings {
 	};
 
 	export class Keybindings {
-		settings: any
+		settings: Gsettings;
 
 		constructor() {
 			this.settings = get_local_gsettings(KEYBINDINGS);
