@@ -168,6 +168,12 @@ module Preview {
 			this.updateUi();
 		}
 
+		public applyManipulator(fn: (r: Rect, bounds: Rect) => Rect): void {
+			if (this.preview === null) return;
+			this.preview = fn(this.preview, this.bounds);
+			this.updateUi();
+		}
+
 		static applyMove(diff: Point, base: Rect, bounds: Rect): Rect {
 			const ret = Rect.copy(base);
 			const scaled = Point.scaleConstant(MANIPULATION_SCALE, diff);

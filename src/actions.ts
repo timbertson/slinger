@@ -1,3 +1,5 @@
+/// <reference path="manipulations.ts" />
+
 module MetaUtil {
 	const Meta = imports.gi.Meta;
 	const Main = imports.ui.main;
@@ -81,60 +83,31 @@ module MetaUtil {
 
 
 module WindowActions {
-	const RESIZE_SENSITIVITY = 0.1;
-	const MOVE_SENSITIVITY = 0.1;
-
 	function assert(x: any) {
 		if (!x) throw new Error("Assertion failed");
 	}
 
-	function windowManipulator(fn: (r: Rect, scale: number) => Rect): Function {
+	function windowManipulator(fn: (r: Rect, bounds: Rect) => Rect): Function {
 		return function() {
 			const win = MetaUtil.currentWindow();
 			if (win == null) {
 				p("no current window");
 				return;
 			}
-			const rect = MetaUtil.rect(win.get_frame_rect());
-			const workArea = MetaUtil.workspaceArea(win);
-			const scaleFactor = ((workArea.size.x + workArea.size.y) / 2);
-			const newRect = fn(rect, scaleFactor);
-			MetaUtil.moveResize(win, Rect.moveWithin(newRect, workArea));
+			const newRect = fn(
+				MetaUtil.rect(win.get_frame_rect()),
+				MetaUtil.workspaceArea(win));
+			MetaUtil.moveResize(win, newRect);
 			MetaUtil.activateLater(win);
 		}
 	}
 
-	function axialPoint(axis: Axis, magnitude: number): Point {
-		switch(axis) {
-			case null: return { x: magnitude, y: magnitude };
-			case Axis.x: return { x: magnitude, y: 0 };
-			case Axis.y: return { x: 0, y: magnitude };
-		}
-	}
-
 	export function moveAction(direction: number, axis: Axis): Function {
-		return windowManipulator(function(rect: Rect, scale: number) {
-			const amount = Math.floor(direction * MOVE_SENSITIVITY * scale);
-			const diff = axialPoint(axis, amount);
-			p("diff: " + JSON.stringify(amount) + " to window rect: " + JSON.stringify(rect));
-			return {
-				pos: Point.add(rect.pos, diff),
-				size: rect.size,
-			};
-		});
+		return windowManipulator(Manipulations.move(direction, axis));
 	}
 
 	export function resizeAction(direction: number, axis: Axis): Function {
-		return windowManipulator(function(rect: Rect, scale: number) {
-			const amount = Math.floor(direction * RESIZE_SENSITIVITY * scale);
-			const diff = axialPoint(axis, amount);
-			p("adding diff: " + JSON.stringify(diff) + " to window rect: " + JSON.stringify(rect));
-			return {
-				// remove half of diff from pos to keep centered
-				pos: Point.add(rect.pos, Point.scaleConstant(-0.5, diff)),
-				size: Point.add(rect.size, diff)
-			};
-		});
+		return windowManipulator(Manipulations.resize(direction, axis));
 	}
 
 	function withWorkspaceDiff(diff: number, fn: (ws: MetaWorkspace, idx: number) => void): void {
@@ -318,17 +291,6 @@ module WindowActions {
 			this.metrics = new RectMetrics(MetaUtil.rect(win.get_frame_rect()));
 		}
 	}
-
-	// class WindowTileMatch {
-	// 	metrics: WindowMetrics
-	// 	tile: RectMetrics
-	// 	diff: number
-  //
-	// 	constructor(win: WindowMetrics, tile: RectMetrics) {
-	// 		this.metrics = win
-	// 		this.diff = win.metrics.diff(tile);
-	// 	}
-	// }
 
 	class TileCandidate {
 		match: WindowMetrics

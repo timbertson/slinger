@@ -22,6 +22,7 @@ type ClutterMouseEvent = {
 };
 type ClutterKeyEvent = {
 	get_key_code(): number
+	get_state(): number // XXX property modifier_state doesn' seem to work
 };
 type ClutterCanvas = {
 	invalidate(): void

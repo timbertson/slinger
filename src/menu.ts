@@ -3,6 +3,7 @@
 /// <reference path="preview.ts" />
 /// <reference path="point.ts" />
 /// <reference path="rect.ts" />
+/// <reference path="manipulations.ts" />
 
 module Menu {
 	const Clutter = imports.gi.Clutter;
@@ -55,6 +56,8 @@ module Menu {
 		CTRL = 64,
 		ALT = 133,
 		TAB = 23,
+		U = 30,
+		I = 31,
 		H = 43,
 		J = 44,
 		K = 45,
@@ -394,8 +397,9 @@ module Menu {
 
 	function modeForKey(key: KeyCode): MouseMode {
 		switch(key) {
-			case KeyCode.SHIFT: return MouseMode.MOVE;
+			case KeyCode.CTRL: return MouseMode.MOVE;
 			case KeyCode.ALT: return MouseMode.RESIZE;
+			case KeyCode.SPACE: return MouseMode.NOOP;
 			default: return null;
 		}
 	}
@@ -500,14 +504,13 @@ module Menu {
 				this.complete(false);
 			} else if (code == KeyCode.RETURN) {
 				this.complete(true);
-			} else if (code == KeyCode.SPACE || code == KeyCode.TAB) {
+			} else if (code == KeyCode.TAB) {
 				p("entering NOOP(drag) mode");
 				this.menuHandlers.resetTracking();
 				this.mouseMode = MouseMode.NOOP;
 				this.menu.hide();
 			} else {
 				const newMode = modeForKey(code);
-
 				if (newMode !== null) {
 					if (this.mouseMode !== newMode) {
 						if (this.menuHandlers.trackMouse(this.mouseMode)) {
@@ -526,6 +529,32 @@ module Menu {
 					} else if (selection !== null) {
 						this.menuHandlers.updateSelection(selection);
 					}
+				} else {
+					imports.ui.main._foo = event;
+					this.onManipulationKeyPress(code, event.get_state());
+				}
+			}
+		}
+
+		onManipulationKeyPress(code: KeyCode, modifiers: number) {
+			p("keycode: " + code);
+			p("Modifiers: " + modifiers);
+			if (modifiers & Clutter.ModifierType.SHIFT_MASK) {
+				switch (code) {
+					case KeyCode.H: case KeyCode.LEFT:  return this.preview.applyManipulator(Manipulations.resize(-1, Axis.x));
+					case KeyCode.U: case KeyCode.DOWN:  return this.preview.applyManipulator(Manipulations.resize(1, Axis.y));
+					case KeyCode.I: case KeyCode.UP:    return this.preview.applyManipulator(Manipulations.resize(-1, Axis.y));
+					case KeyCode.L: case KeyCode.RIGHT: return this.preview.applyManipulator(Manipulations.resize(1, Axis.x));
+				}
+			} else {
+				switch (code) {
+					case KeyCode.H: case KeyCode.LEFT:  return this.preview.applyManipulator(Manipulations.move(-1, Axis.x));
+					case KeyCode.U: case KeyCode.DOWN:  return this.preview.applyManipulator(Manipulations.move(1, Axis.y));
+					case KeyCode.I: case KeyCode.UP:    return this.preview.applyManipulator(Manipulations.move(-1, Axis.y));
+					case KeyCode.L: case KeyCode.RIGHT: return this.preview.applyManipulator(Manipulations.move(1, Axis.x));
+
+					case KeyCode.MINUS: return this.preview.applyManipulator(Manipulations.resize(-1, null));
+					case KeyCode.EQUAL: return this.preview.applyManipulator(Manipulations.resize(1, null));
 				}
 			}
 		}
