@@ -416,6 +416,8 @@ module Menu {
 
 	function selectionForKey(key: KeyCode): Selection {
 		switch(key) {
+			case KeyCode.TAB:
+				return Selection.None;
 			case KeyCode.EQUAL:
 				return Selection.Inner(InnerSelection.MAXIMIZE);
 
@@ -504,11 +506,6 @@ module Menu {
 				this.complete(false);
 			} else if (code == KeyCode.RETURN) {
 				this.complete(true);
-			} else if (code == KeyCode.TAB) {
-				p("entering NOOP(drag) mode");
-				this.menuHandlers.resetTracking();
-				this.mouseMode = MouseMode.NOOP;
-				this.menu.hide();
 			} else {
 				const newMode = modeForKey(code);
 				if (newMode !== null) {
