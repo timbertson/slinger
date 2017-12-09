@@ -312,11 +312,6 @@ module Menu {
 			return Clutter.EVENT_STOP;
 		}
 
-		resetTracking() {
-			this.updateSelection(Selection.None);
-			this.preview.resetTracking(this.getMousePosition());
-		}
-
 		trackMouse(prevMode: MouseMode): boolean {
 			return this.preview.trackMouse(prevMode, this.getMousePosition());
 		}
@@ -527,7 +522,6 @@ module Menu {
 						this.menuHandlers.updateSelection(selection);
 					}
 				} else {
-					imports.ui.main._foo = event;
 					this.onManipulationKeyPress(code, event.get_state());
 				}
 			}
@@ -539,15 +533,15 @@ module Menu {
 			if (modifiers & Clutter.ModifierType.SHIFT_MASK) {
 				switch (code) {
 					case KeyCode.H: case KeyCode.LEFT:  return this.preview.applyManipulator(Manipulations.resize(-1, Axis.x));
-					case KeyCode.U: case KeyCode.DOWN:  return this.preview.applyManipulator(Manipulations.resize(1, Axis.y));
-					case KeyCode.I: case KeyCode.UP:    return this.preview.applyManipulator(Manipulations.resize(-1, Axis.y));
+					case KeyCode.U: case KeyCode.J: case KeyCode.DOWN:  return this.preview.applyManipulator(Manipulations.resize(1, Axis.y));
+					case KeyCode.I: case KeyCode.K: case KeyCode.UP:    return this.preview.applyManipulator(Manipulations.resize(-1, Axis.y));
 					case KeyCode.L: case KeyCode.RIGHT: return this.preview.applyManipulator(Manipulations.resize(1, Axis.x));
 				}
 			} else {
 				switch (code) {
 					case KeyCode.H: case KeyCode.LEFT:  return this.preview.applyManipulator(Manipulations.move(-1, Axis.x));
-					case KeyCode.U: case KeyCode.DOWN:  return this.preview.applyManipulator(Manipulations.move(1, Axis.y));
-					case KeyCode.I: case KeyCode.UP:    return this.preview.applyManipulator(Manipulations.move(-1, Axis.y));
+					case KeyCode.U: case KeyCode.J: case KeyCode.DOWN:  return this.preview.applyManipulator(Manipulations.move(1, Axis.y));
+					case KeyCode.I: case KeyCode.K: case KeyCode.UP:    return this.preview.applyManipulator(Manipulations.move(-1, Axis.y));
 					case KeyCode.L: case KeyCode.RIGHT: return this.preview.applyManipulator(Manipulations.move(1, Axis.x));
 
 					case KeyCode.MINUS: return this.preview.applyManipulator(Manipulations.resize(-1, null));
