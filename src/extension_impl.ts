@@ -2,6 +2,8 @@
 /// <reference path="extension_settings.ts" />
 /// <reference path="menu.ts" />
 /// <reference path="logging.ts" />
+/// <reference path="gnome_shell.ts" />
+/// <reference path="actions.ts" />
 
 const Main = imports.ui.main;
 const Shell = imports.gi.Shell;
@@ -9,28 +11,21 @@ const Meta = imports.gi.Meta;
 const Gdk = imports.gi.Gdk;
 const Clutter = imports.gi.Clutter;
 
-interface Global {
-	screen: {
-		get_display(): {
-			'focus-window': MetaWindow
-		}
-		get_workspace_by_index(i: number): {
-			get_work_area_for_monitor(i: number): MetaRect
-		}
-	}
-	window_group: {}
-	get_current_time: () => number
-}
-declare var global: Global;
-
-function failsafe(fn: Function) {
+function failsafe(fn: Function, desc?: string) {
 	return function(this: any) {
 		try {
+			if (desc) p("Running: " + desc);
 			fn.apply(this, arguments)
 		} catch(e) {
 			p('Error: ' + e);
 		}
 	}
+}
+
+module WindowFilter {
+	// export function visible(w: MetaWindow) {
+	// 	return w.get_minimized() !== CBoolean.True;
+	// }
 }
 
 class Extension {
@@ -61,7 +56,7 @@ class Extension {
 				gsettings,
 				flags,
 				Shell.ActionMode.NORMAL,
-				failsafe(func));
+				failsafe(func, name));
 
 			if(!added) {
 				throw(new Error("failed to add keybinding handler for: " + name));
@@ -74,13 +69,43 @@ class Extension {
 		};
 
 		p("adding keyboard handlers for slinger");
-		handle('slinger-show', self.show_ui.bind(this));
+		handle('slinger-show', this.show_ui.bind(this));
+
+		handle('slinger-next-window', WindowActions.selectWindow(1));
+		handle('slinger-prev-window', WindowActions.selectWindow(-1));
+
+		handle('slinger-swap-next-window', WindowActions.swapWindow(1));
+		handle('slinger-swap-prev-window', WindowActions.swapWindow(-1));
+
+		handle('slinger-move-right', WindowActions.moveAction(1, Axis.x));
+		handle('slinger-move-left', WindowActions.moveAction(-1, Axis.x));
+		handle('slinger-move-up', WindowActions.moveAction(-1, Axis.y));
+		handle('slinger-move-down', WindowActions.moveAction(1, Axis.y));
+
+		handle('slinger-grow-horizontal', WindowActions.resizeAction(1, Axis.x));
+		handle('slinger-shrink-horizontal', WindowActions.resizeAction(-1, Axis.x));
+		handle('slinger-grow-vertical', WindowActions.resizeAction(1, Axis.y));
+		handle('slinger-shrink-vertical', WindowActions.resizeAction(-1, Axis.y));
+		handle('slinger-grow', WindowActions.resizeAction(1, null));
+		handle('slinger-shrink', WindowActions.resizeAction(-1, null));
+
+		handle('slinger-switch-workspace-up', WindowActions.switchWorkspace(-1));
+		handle('slinger-switch-workspace-down', WindowActions.switchWorkspace(1));
+
+		handle('slinger-move-window-workspace-up', WindowActions.moveWindowWorkspace(-1));
+		handle('slinger-move-window-workspace-down', WindowActions.moveWindowWorkspace(1));
+
+		handle('slinger-toggle-maximize', WindowActions.toggleMaximize);
+		handle('slinger-minimize-window', WindowActions.minimize);
+		handle('slinger-unminimize-window', WindowActions.unminimize);
+
+		handle('slinger-distribute', WindowActions.distribute);
 	}
 
 	private show_ui() {
 		this.hide_ui();
 		const display = Gdk.Display.get_default();
-		const window: MetaWindow = global.screen.get_display()['focus-window'];
+		const window = MetaUtil.currentWindow();
 		if(!window) {
 			p("no active window; ignoring")
 			return;
@@ -90,35 +115,29 @@ class Extension {
 
 		const pointer = display.get_device_manager().get_client_pointer();
 		const mousePos = pointer.get_position();
-		const screenIdx = mousePos[0];
 		const metaRect: MetaRect = window.get_frame_rect();
 
 		// const monitorIdx = global.screen.get_primary_monitor();
-		const screen: MetaRect = global.screen.get_workspace_by_index(0).get_work_area_for_monitor(screenIdx);
-		const pos: Point = {
-			x: screen.x,
-			y: screen.y
-		};
-		const size: Point = {
-			x: screen.width,
-			y: screen.height
-		};
-		const windowRect: Rect = {
-			pos: { x: metaRect.x - pos.x, y: metaRect.y - pos.y },
-			size: { x: metaRect.width, y: metaRect.height },
-		};
+		const workArea: Rect = MetaUtil.workspaceArea(window);
+		const pos = workArea.pos;
+		const windowRect = MetaUtil.rect(metaRect);
+		windowRect.pos = Point.subtract(windowRect.pos, workArea.pos);
+
+		const windowActor = window.get_compositor_private();
 
 		this.menu = new Menu.Menu(
 			global.window_group,
-			{ size, pos },
+			workArea,
 			{ x: mousePos[1], y: mousePos[2]},
 			windowRect,
+			windowActor,
 			this.onLayoutSelect(window, pos)
 		);
 		this.menu.ui.set_position(pos.x, pos.y);
 		Main.pushModal(this.menu.ui);
 		this.menu.ui.connect('unrealize', function() {
 			p("hiding modal");
+			windowActor.set_opacity(255);
 			Main.popModal(self.menu.ui);
 			self.menu = null;
 			return Clutter.EVENT_PROPAGATE;
@@ -145,17 +164,9 @@ class Extension {
 				break;
 				
 				case Menu.Action.RESIZE:
-					if(window.get_maximized() !== CBoolean.False) {
-						window.unmaximize(Meta.MaximizeFlags.VERTICAL | Meta.MaximizeFlags.HORIZONTAL);
-					}
-
-					window.move_resize_frame(true,
-						rect.pos.x + offset.x,
-						rect.pos.y + offset.y,
-						rect.size.x,
-						rect.size.y);
+					MetaUtil.moveResize(window, Rect.move(rect, offset));
 				case Menu.Action.CANCEL: // fallthrough
-					Main.activateWindow(window, global.get_current_time());
+					MetaUtil.activate(window);
 				break;
 			}
 		}

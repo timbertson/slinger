@@ -12,28 +12,6 @@ interface Rect {
 	size: Point
 }
 
-interface MetaRect {
-	x: number
-	y: number
-	width: number
-	height: number
-}
-
-enum CBoolean {
-	False = 0,
-	True = 1
-}
-type MetaWindow = {
-	get_frame_rect(): MetaRect
-	minimize(): void
-	get_maximized(): CBoolean
-	unmaximize(flags: number): void
-	move_resize_frame(userAction: boolean,
-		x: number,
-		y: number,
-		w: number,
-		h: number): void
-};
 // TODO ...
 type ClutterModule = any;
 type Actor = any;
@@ -65,7 +43,6 @@ type ClutterContext = {
 	translate(x: number, y: number): void
 	setSourceRGBA(r: number, g: number, b: number, a: number): void
 }
-
 
 interface Grey {
 	luminance: number

@@ -1,6 +1,7 @@
 /// <reference path="common.ts" />
 /// <reference path="logging.ts" />
 /// <reference path="menu.ts" />
+/// <reference path="math.ts" />
 
 module Preview {
 	const Clutter = imports.gi.Clutter;
@@ -19,11 +20,12 @@ module Preview {
 		private preview: Rect
 		private selection: Menu.Selection;
 		private windowRect: Rect;
+		private windowActor: Actor;
 		ui: Actor
 		resizeCorner: Anchor;
 		trackingOrigin: Point;
 
-		constructor(size: Point, windowRect: Rect) {
+		constructor(size: Point, windowRect: Rect, windowActor: Actor) {
 			this.size = size;
 			this.bounds = { pos: Point.ZERO, size: this.size };
 			this.ui = new Clutter.Actor();
@@ -36,6 +38,7 @@ module Preview {
 			this.resizeCorner = null;
 			this.selection = Menu.Selection.None;
 			this.windowRect = windowRect;
+			this.windowActor = windowActor;
 			this.ui.hide();
 		}
 
@@ -177,18 +180,12 @@ module Preview {
 		static applyResize(location: Anchor, diff: Point, base: Rect, bounds: Rect): Rect {
 			const ret = Rect.copy(base);
 			const scaled = Point.scaleConstant(MANIPULATION_SCALE, diff);
-			function between(min: number, x: number, max: number): number {
-				// p('between('+min+', '+x+', '+max+')');
-				if (min > x) return min;
-				if (max < x) return max;
-				return x;
-			}
 
 			function moveNear(axis: Axis) {
 				// minimum diff is enough to bring this edge to 0 (i.e. invert the current pos)
 				// maximum diff is enough to bring this edge to ther other side of this rect, minus MINIMUM_SIZE
 				// p('moveNear['+axis+']');
-				const diff = between(-ret.pos[axis], scaled[axis], ret.size[axis] - MINIMUM_SIZE);
+				const diff = MathUtil.between(-ret.pos[axis], scaled[axis], ret.size[axis] - MINIMUM_SIZE);
 				ret.pos[axis] += diff;
 				ret.size[axis] -= diff;
 			}
@@ -197,7 +194,7 @@ module Preview {
 				// minimum diff is enough to bring this edge to the other side of this rect, plus MINIMUM_SIZE
 				// maximum diff is enough to bring this edge to the right bounds
 				// p('moveFar['+axis+']');
-				const diff = between(MINIMUM_SIZE - ret.size[axis], scaled[axis], bounds.size[axis] - ret.pos[axis] - ret.size[axis]);
+				const diff = MathUtil.between(MINIMUM_SIZE - ret.size[axis], scaled[axis], bounds.size[axis] - ret.pos[axis] - ret.size[axis]);
 				ret.size[axis] += diff;
 			}
 
@@ -264,12 +261,20 @@ module Preview {
 			this.resetPreview();
 		}
 
+		private setWindowHidden(hidden: boolean) {
+			if (this.windowActor !== null) {
+				this.windowActor.set_opacity(hidden ? 0 : 255);
+			}
+		}
+
 		private updateUi() {
 			if (this.preview == null) {
 				this.ui.hide();
+				this.setWindowHidden(false);
 			} else {
 				this.ui.set_position(this.preview.pos.x, this.preview.pos.y);
 				this.ui.set_size(this.preview.size.x, this.preview.size.y);
+				this.setWindowHidden(true);
 				this.ui.show();
 			}
 		}

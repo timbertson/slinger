@@ -412,11 +412,8 @@ module Menu {
 
 	function selectionForKey(key: KeyCode): Selection {
 		switch(key) {
-			case KeyCode.MINUS:
-				return { ring: Ring.INNER, index: InnerSelection.MINIMIZE };
-
 			case KeyCode.EQUAL:
-				return { ring: Ring.INNER, index: InnerSelection.MAXIMIZE };
+				return Selection.Inner(InnerSelection.MAXIMIZE);
 
 			default: return null;
 		}
@@ -431,7 +428,7 @@ module Menu {
 		private menu: Actor;
 		private mouseMode: MouseMode;
 
-		constructor(parent: Actor, screen: Rect, origin: Point, windowRect: Rect, onSelect: FunctionActionRectVoid) {
+		constructor(parent: Actor, screen: Rect, origin: Point, windowRect: Rect, windowActor: Actor, onSelect: FunctionActionRectVoid) {
 			p("creating menu at " + JSON.stringify(origin) + " with bounds " + JSON.stringify(screen));
 			const self = this;
 			this.parent = parent;
@@ -452,7 +449,7 @@ module Menu {
 			const position: Point = Point.subtract(Point.subtract(origin, screen.pos), Point.scaleConstant(0.5, menuSize));
 			menu.set_position(position.x, position.y);
 
-			const preview = this.preview = new Preview.LayoutPreview(screen.size, windowRect);
+			const preview = this.preview = new Preview.LayoutPreview(screen.size, windowRect, windowActor);
 			const handlers = this.menuHandlers = new MenuHandlers(menuSize, origin, canvas, preview);
 			canvas.connect('draw', handlers.draw);
 			backgroundActor.connect('motion-event', function(_actor: Actor, event: ClutterMouseEvent) {
@@ -498,7 +495,7 @@ module Menu {
 
 		onKeyPress(event: ClutterKeyEvent) {
 			const code: number = event.get_key_code();
-			p('keypress: ' + code);
+			// p('keypress: ' + code);
 			if (code == KeyCode.ESC) {
 				this.complete(false);
 			} else if (code == KeyCode.RETURN) {
@@ -528,7 +525,6 @@ module Menu {
 						this.menuHandlers.applyDirection(direction);
 					} else if (selection !== null) {
 						this.menuHandlers.updateSelection(selection);
-						this.complete(true);
 					}
 				}
 			}
