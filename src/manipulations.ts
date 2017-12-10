@@ -1,6 +1,7 @@
 module Manipulations {
 	const RESIZE_SENSITIVITY = 0.1;
 	const MOVE_SENSITIVITY = 0.1;
+	const EDGE_AFFINITY = 30; // px
 
 	function axialPoint(axis: Axis, magnitude: number): Point {
 		switch(axis) {
@@ -14,16 +15,25 @@ module Manipulations {
 		return (workArea.size.x + workArea.size.y) / 2;
 	}
 
-	function wrap(fn: (r: Rect, scale: number) => Rect): (r: Rect, w:Rect) => Rect {
+	function wrap(edgeAffinity: boolean, fn: (r: Rect, scale: number) => Rect): (r: Rect, w:Rect) => Rect {
 		return function(rect: Rect, workArea: Rect) {
 			const scale = scaleForWorkspace(workArea);
 			const newRect = fn(rect, scale);
-			return Rect.moveWithin(newRect, workArea);
+			if (edgeAffinity) {
+				return Rect.moveWithinAffinity({
+					margin: EDGE_AFFINITY,
+					original: rect,
+					modified: newRect,
+					bounds: workArea,
+				});
+			} else {
+				return Rect.moveWithin(newRect, workArea);
+			}
 		}
 	}
 
 	export function resize(direction: number, axis: Axis) {
-		return wrap(function(rect: Rect, scale: number) {
+		return wrap(true, function(rect: Rect, scale: number) {
 			const amount = RESIZE_SENSITIVITY * scale * direction;
 			const diff = axialPoint(axis, amount);
 			// p("scaling diff: " + JSON.stringify(diff) + " on window rect: " + JSON.stringify(rect));
@@ -36,7 +46,7 @@ module Manipulations {
 	}
 
 	export function move(direction: number, axis: Axis) {
-		return wrap(function(rect: Rect, scale: number) {
+		return wrap(false, function(rect: Rect, scale: number) {
 			const amount = MOVE_SENSITIVITY * scale * direction;
 			const diff = axialPoint(axis, amount);
 			// p("adding diff: " + JSON.stringify(amount) + " to window rect: " + JSON.stringify(rect));
