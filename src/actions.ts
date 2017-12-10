@@ -131,7 +131,7 @@ module WindowActions {
 			const win = MetaUtil.currentWindow();
 			if (win === null) return;
 			withWorkspaceDiff(diff, function(ws: MetaWorkspace, idx: number) {
-				win.move_to_workspace(idx);
+				win.change_workspace_by_index(idx, false);
 				ws.activate_with_focus(win, global.get_current_time())
 			})
 		}

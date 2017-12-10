@@ -49,6 +49,7 @@ type MetaWindow = {
 	maximize(flags: number): void
 	get_work_area_current_monitor(): MetaRect
 	move_to_workspace(idx: number): void
+	change_workspace_by_index(newIdx: number, append: boolean): void;
 	move_resize_frame(userAction: boolean,
 		x: number,
 		y: number,
