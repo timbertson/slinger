@@ -394,7 +394,7 @@ module Menu {
 		switch(key) {
 			case KeyCode.CTRL: return MouseMode.MOVE;
 			case KeyCode.ALT: return MouseMode.RESIZE;
-			case KeyCode.SPACE: return MouseMode.NOOP;
+			case KeyCode.SPACE: case KeyCode.TAB: return MouseMode.NOOP;
 			default: return null;
 		}
 	}
@@ -411,8 +411,6 @@ module Menu {
 
 	function selectionForKey(key: KeyCode): Selection {
 		switch(key) {
-			case KeyCode.TAB:
-				return Selection.None;
 			case KeyCode.EQUAL:
 				return Selection.Inner(InnerSelection.MAXIMIZE);
 
@@ -528,8 +526,8 @@ module Menu {
 		}
 
 		onManipulationKeyPress(code: KeyCode, modifiers: number) {
-			p("keycode: " + code);
-			p("Modifiers: " + modifiers);
+			// p("keycode: " + code);
+			// p("Modifiers: " + modifiers);
 			if (modifiers & Clutter.ModifierType.SHIFT_MASK) {
 				switch (code) {
 					case KeyCode.H: case KeyCode.LEFT:  return this.preview.applyManipulator(Manipulations.resize(-1, Axis.x));
