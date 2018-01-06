@@ -1,3 +1,5 @@
+/// <reference path="common.ts" />
+
 function p(msg: String) {
 	log('[slinger]:' + msg);
 }

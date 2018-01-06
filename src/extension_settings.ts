@@ -1,4 +1,5 @@
 /// <reference path="common.ts" />
+/// <reference path="gnome_shell.ts" />
 
 module Settings {
 	var Gio = imports.gi.Gio;

@@ -1,6 +1,7 @@
 /// <reference path="common.ts" />
 /// <reference path="point.ts" />
 /// <reference path="math.ts" />
+
 module Rect {
 	export function copy(r: Rect): Rect {
 		return { pos: Point.copy(r.pos), size: Point.copy(r.size) };
@@ -65,14 +66,14 @@ module Rect {
 			const near = close(bounds.pos[axis], original.pos[axis]);
 			const far = close((bounds.pos[axis] + bounds.size[axis]), (original.pos[axis] + original.size[axis]));
 
-			p("near affinity["+axis+"] = "+near);
-			p("far affinity["+axis+"] = "+far);
+			// p("near affinity["+axis+"] = "+near);
+			// p("far affinity["+axis+"] = "+far);
 			if (near && far) return 0; // can't do anything for a window attached to both edges
 			if (near) {
-				p("maintaining near affinity");
+				// p("maintaining near affinity");
 				return bounds.pos[axis] - modified.pos[axis];
 			} else if (far) {
-				p("maintaining far affinity");
+				// p("maintaining far affinity");
 				return (bounds.pos[axis] + bounds.size[axis]) - (modified.pos[axis] + modified.size[axis]);
 			}
 			return 0;

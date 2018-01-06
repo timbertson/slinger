@@ -1,3 +1,7 @@
+/// <reference path="system.ts" />
+
+declare var imports: any;
+
 interface MetaRect {
 	x: number
 	y: number
@@ -5,7 +9,7 @@ interface MetaRect {
 	height: number
 }
 
-type MetaScreen = {
+interface MetaScreen {
 	get_display(): {
 		'focus-window': MetaWindow
 	}
@@ -34,7 +38,7 @@ enum MaximizeFlags {
 	Neither = 0
 }
 
-type MetaWindow = {
+interface MetaWindow {
 	get_title(): string
 	get_window_type(): number
 	get_frame_rect(): MetaRect
@@ -57,4 +61,143 @@ type MetaWindow = {
 		h: number): void
 	get_monitor(): number
 };
+
+module GnomeSystem {
+	const Meta = imports.gi.Meta;
+	const Main = imports.ui.main;
+	const Mainloop = imports.mainloop;
+
+	export const Clutter = imports.gi.Clutter;
+	export const Cairo = imports.cairo;
+
+	export function newClutterActor(): Actor { return new Clutter.Actor(); }
+	export function newClutterCanvas(): ClutterCanvas { return new Clutter.Canvas(); }
+	export function newClutterColor(components: { red: number, green: number, blue: number, alpha: number}): ClutterColor {
+		return new Clutter.Color(components);
+	}
+
+	export function numWorkspaces(): number {
+		return global.screen.get_n_workspaces();
+	}
+
+	export function workspaceIndex(): number {
+		return global.screen.get_active_workspace_index();
+	}
+
+	export function activateWorkspace(idx: number) {
+		let ws = global.screen.get_workspace_by_index(idx)
+		ws.activate(global.get_current_time());
+	}
+
+	export function moveWindowToWorkspace(win: MetaWindow, idx: number) {
+		let ws = global.screen.get_workspace_by_index(newIdx)
+		win.change_workspace_by_index(idx, false);
+		ws.activate_with_focus(win, global.get_current_time())
+	}
+
+	export function stableSequence(win: MetaWindow): number {
+		return win.get_stable_sequence();
+	}
+
+	export function windowTitle(win: MetaWindow): string {
+		return win.get_title();
+	}
+
+	function rect(metaRect: MetaRect): Rect {
+		return {
+			pos: { x: metaRect.x, y: metaRect.y },
+			size: { x: metaRect.width, y: metaRect.height },
+		};
+	}
+
+	export function windowRect(win: MetaWindow) {
+		return rect(win.get_frame_rect());
+	}
+
+	export function minimize(win: MetaWindow) {
+		win.minimize();
+	}
+
+	export function unminimize(win: MetaWindow) {
+		win.unminimize();
+	}
+
+	export function moveResize(win: MetaWindow, rect: Rect) {
+		if(win.get_maximized() !== MaximizeFlags.Neither) {
+			unmaximize(win);
+		}
+		win.move_resize_frame(true,
+			rect.pos.x,
+			rect.pos.y,
+			rect.size.x,
+			rect.size.y);
+	}
+
+	export function currentWindow(): MetaWindow {
+		return global.screen.get_display()['focus-window'];
+	}
+
+	export function workspaceArea(win: MetaWindow): Rect {
+		return rect(win.get_work_area_current_monitor());
+	}
+
+	export function unmaximize(win: MetaWindow) {
+		win.unmaximize(Meta.MaximizeFlags.VERTICAL | Meta.MaximizeFlags.HORIZONTAL);
+	}
+
+	export function maximize(win: MetaWindow) {
+		win.maximize(Meta.MaximizeFlags.VERTICAL | Meta.MaximizeFlags.HORIZONTAL);
+	}
+
+	export function getMaximized(win: MetaWindow): boolean {
+		return win.get_maximized() !== MaximizeFlags.Neither;
+	}
+
+	const VISIBLE_WINDOW_TYPES = [
+		Meta.WindowType.NORMAL,
+		Meta.WindowType.DIALOG,
+		Meta.WindowType.UTILITY,
+	];
+
+	function listWindows(win?: MetaWindow): Array<MetaWindow> {
+		// XXX is this multi-monitor compatible?
+		const screen = (win == null) ? global.screen : win.get_screen();
+		const screenNo = screen.get_screen_number();
+		return screen.get_active_workspace().list_windows().filter(function(w: MetaWindow) {
+			return (
+				w.get_screen().get_screen_number() == screenNo
+				&& VISIBLE_WINDOW_TYPES.indexOf(w.get_window_type()) !== -1
+			);
+		});
+	}
+
+	export function visibleWindows(): [MetaWindow, Array<MetaWindow>] {
+		const currentWindow = this.currentWindow();
+		let windows = listWindows(currentWindow).filter(function(w: MetaWindow) {
+			return !w.minimized;
+		});
+		return [currentWindow, visibleWindows];
+	}
+
+	export function minimizedWindows(): Array<MetaWindow> {
+		return listWindows().filter(function(w: MetaWindow) {
+			return w.minimized;
+		});
+	}
+
+	export function activate(win: MetaWindow): void {
+		Main.activateWindow(win, global.get_current_time());
+	}
+
+	export function activateLater(win: MetaWindow): void {
+		Mainloop.idle_add(function() {
+			Main.activateWindow(win, global.get_current_time());
+			return false;
+		});
+	}
+
+	export function setWindowHidden(win: MetaWindow, hidden: boolean) {
+		win.get_compositor_private().set_opacity(hidden ? 0 : 255);
+	}
+}
 

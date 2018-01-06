@@ -1,11 +1,10 @@
 /// <reference path="common.ts" />
 /// <reference path="logging.ts" />
 /// <reference path="menu.ts" />
+/// <reference path="menu_selection.ts" />
 /// <reference path="math.ts" />
 
 module Preview {
-	const Clutter = imports.gi.Clutter;
-
 	const MANIPULATION_SCALE = 2.2;
 	const MINIMUM_SIZE = 20;
 
@@ -13,33 +12,40 @@ module Preview {
 		return (loc + 4) % 8; // Magic!
 	}
 
-	export class LayoutPreview {
+	export class LayoutPreview<WindowType> {
+		private Sys: System<WindowType>
 		private size: Point
 		private bounds: Rect
 		private base: Rect
 		private preview: Rect
-		private selection: Menu.Selection;
+		private selection: MenuSelection;
 		private windowRect: Rect;
-		private windowActor: Actor;
+		private win: WindowType;
+		private windowHidden: boolean;
 		ui: Actor
 		resizeCorner: Anchor;
 		trackingOrigin: Point;
 
-		constructor(size: Point, windowRect: Rect, windowActor: Actor) {
+		constructor(Sys: System<WindowType>,
+				size: Point, windowRect: Rect,
+				win: WindowType)
+		{
+			this.Sys = Sys;
 			this.size = size;
 			this.bounds = { pos: Point.ZERO, size: this.size };
-			this.ui = new Clutter.Actor();
-			this.ui.set_background_color(new Clutter.Color({
+			this.ui = Sys.newClutterActor();
+			this.ui.set_background_color(Sys.newClutterColor({
 				red: 80,
 				green: 158,
 				blue: 255,
 				alpha: 125
 			}));
 			this.resizeCorner = null;
-			this.selection = Menu.Selection.None;
+			this.selection = MenuSelection.None;
 			this.windowRect = windowRect;
-			this.windowActor = windowActor;
+			this.win = win;
 			this.ui.hide();
+			this.windowHidden = null;
 		}
 
 		private selectOuter(loc: Anchor): Rect {
@@ -89,15 +95,15 @@ module Preview {
 			return null;
 		}
 
-		private selectInner(sel: Menu.InnerSelection): Rect {
+		private selectInner(sel: InnerSelection): Rect {
 			switch (sel) {
-				case Menu.InnerSelection.MAXIMIZE:
+				case InnerSelection.MAXIMIZE:
 					return {
 						pos: Point.ZERO,
 						size: this.size,
 					}
 
-				case Menu.InnerSelection.MINIMIZE:
+				case InnerSelection.MINIMIZE:
 				default:
 					return null;
 			}
@@ -106,15 +112,15 @@ module Preview {
 		trackMouse(prevMode: MouseMode, origin: Point): boolean {
 			if (prevMode == MouseMode.MENU) {
 				switch (this.selection.ring) {
-					case Menu.Ring.INNER:
+					case Ring.INNER:
 						return false;
 
-					case Menu.Ring.OUTER:
+					case Ring.OUTER:
 						this.resizeCorner = oppose(this.selection.index);
 						this.trackingOrigin = origin;
 						break;
 
-					case Menu.Ring.NONE:
+					case Ring.NONE:
 						this.resetTracking(origin);
 						break;
 				}
@@ -248,18 +254,18 @@ module Preview {
 			return ret;
 		}
 
-		updateSelection(sel: Menu.Selection) {
+		updateSelection(sel: MenuSelection) {
 			this.selection = sel;
 			switch (sel.ring) {
-				case Menu.Ring.OUTER:
+				case Ring.OUTER:
 					this.base = this.selectOuter(sel.index);
 				break;
 
-				case Menu.Ring.INNER:
+				case Ring.INNER:
 					this.base = this.selectInner(sel.index);
 				break;
 
-				case Menu.Ring.NONE:
+				case Ring.NONE:
 				default:
 					this.base = null;
 				break;
@@ -268,8 +274,9 @@ module Preview {
 		}
 
 		private setWindowHidden(hidden: boolean) {
-			if (this.windowActor !== null) {
-				this.windowActor.set_opacity(hidden ? 0 : 255);
+			if (this.win !== null && this.windowHidden !== hidden) {
+				this.windowHidden = hidden;
+				this.Sys.setWindowHidden(this.win, hidden);
 			}
 		}
 
@@ -278,8 +285,8 @@ module Preview {
 				this.ui.hide();
 				this.setWindowHidden(false);
 			} else {
-				this.ui.set_position(this.preview.pos.x, this.preview.pos.y);
 				this.ui.set_size(this.preview.size.x, this.preview.size.y);
+				this.ui.set_position(this.preview.pos.x, this.preview.pos.y);
 				this.setWindowHidden(true);
 				this.ui.show();
 			}

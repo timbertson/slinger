@@ -30,7 +30,7 @@ module WindowFilter {
 
 class Extension {
 	private disable_actions: Array<Function>;
-	menu: Menu.Menu;
+	menu: Menu.Menu<MetaWindow>;
 
 	constructor() {
 	}
@@ -68,107 +68,78 @@ class Extension {
 			});
 		};
 
+		const windowActions = WindowActions.Make(GnomeSystem);
+
 		p("adding keyboard handlers for slinger");
 		handle('slinger-show', this.show_ui.bind(this));
 
-		handle('slinger-next-window', WindowActions.selectWindow(1));
-		handle('slinger-prev-window', WindowActions.selectWindow(-1));
+		handle('slinger-next-window', windowActions.selectWindow(1));
+		handle('slinger-prev-window', windowActions.selectWindow(-1));
 
-		handle('slinger-swap-next-window', WindowActions.swapWindow(1));
-		handle('slinger-swap-prev-window', WindowActions.swapWindow(-1));
+		handle('slinger-swap-next-window', windowActions.swapWindow(1));
+		handle('slinger-swap-prev-window', windowActions.swapWindow(-1));
 
-		handle('slinger-move-right', WindowActions.moveAction(1, Axis.x));
-		handle('slinger-move-left', WindowActions.moveAction(-1, Axis.x));
-		handle('slinger-move-up', WindowActions.moveAction(-1, Axis.y));
-		handle('slinger-move-down', WindowActions.moveAction(1, Axis.y));
+		handle('slinger-move-right', windowActions.moveAction(1, Axis.x));
+		handle('slinger-move-left', windowActions.moveAction(-1, Axis.x));
+		handle('slinger-move-up', windowActions.moveAction(-1, Axis.y));
+		handle('slinger-move-down', windowActions.moveAction(1, Axis.y));
 
-		handle('slinger-grow-horizontal', WindowActions.resizeAction(1, Axis.x));
-		handle('slinger-shrink-horizontal', WindowActions.resizeAction(-1, Axis.x));
-		handle('slinger-grow-vertical', WindowActions.resizeAction(1, Axis.y));
-		handle('slinger-shrink-vertical', WindowActions.resizeAction(-1, Axis.y));
-		handle('slinger-grow', WindowActions.resizeAction(1, null));
-		handle('slinger-shrink', WindowActions.resizeAction(-1, null));
+		handle('slinger-grow-horizontal', windowActions.resizeAction(1, Axis.x));
+		handle('slinger-shrink-horizontal', windowActions.resizeAction(-1, Axis.x));
+		handle('slinger-grow-vertical', windowActions.resizeAction(1, Axis.y));
+		handle('slinger-shrink-vertical', windowActions.resizeAction(-1, Axis.y));
+		handle('slinger-grow', windowActions.resizeAction(1, null));
+		handle('slinger-shrink', windowActions.resizeAction(-1, null));
 
-		handle('slinger-switch-workspace-up', WindowActions.switchWorkspace(-1));
-		handle('slinger-switch-workspace-down', WindowActions.switchWorkspace(1));
+		handle('slinger-switch-workspace-up', windowActions.switchWorkspace(-1));
+		handle('slinger-switch-workspace-down', windowActions.switchWorkspace(1));
 
-		handle('slinger-move-window-workspace-up', WindowActions.moveWindowWorkspace(-1));
-		handle('slinger-move-window-workspace-down', WindowActions.moveWindowWorkspace(1));
+		handle('slinger-move-window-workspace-up', windowActions.moveWindowWorkspace(-1));
+		handle('slinger-move-window-workspace-down', windowActions.moveWindowWorkspace(1));
 
-		handle('slinger-toggle-maximize', WindowActions.toggleMaximize);
-		handle('slinger-minimize-window', WindowActions.minimize);
-		handle('slinger-unminimize-window', WindowActions.unminimize);
+		handle('slinger-toggle-maximize', windowActions.toggleMaximize);
+		handle('slinger-minimize-window', windowActions.minimize);
+		handle('slinger-unminimize-window', windowActions.unminimize);
 
-		handle('slinger-distribute', WindowActions.distribute);
+		handle('slinger-distribute', windowActions.distribute);
 	}
 
 	private show_ui() {
 		this.hide_ui();
 		const display = Gdk.Display.get_default();
-		const window = MetaUtil.currentWindow();
-		if(!window) {
-			p("no active window; ignoring")
-			return;
-		}
-		p("showing UI")
+		const window = GnomeSystem.currentWindow();
 		const self = this;
 
 		const pointer = display.get_device_manager().get_client_pointer();
 		const mousePos = pointer.get_position();
-		const metaRect: MetaRect = window.get_frame_rect();
 
-		// const monitorIdx = global.screen.get_primary_monitor();
-		const workArea: Rect = MetaUtil.workspaceArea(window);
-		const pos = workArea.pos;
-		const windowRect = MetaUtil.rect(metaRect);
-		windowRect.pos = Point.subtract(windowRect.pos, workArea.pos);
-
-		const windowActor = window.get_compositor_private();
-
-		this.menu = new Menu.Menu(
-			global.window_group,
-			workArea,
+		this.menu = Menu.Menu.show(GnomeSystem,
+			(global.window_group as Actor),
 			{ x: mousePos[1], y: mousePos[2]},
-			windowRect,
-			windowActor,
-			this.onLayoutSelect(window, pos)
+			window
 		);
+
+		if (!this.menu) {
+			return;
+		}
+
+		const workArea: Rect = GnomeSystem.workspaceArea(window);
+		const pos = workArea.pos;
 		this.menu.ui.set_position(pos.x, pos.y);
+
 		Main.pushModal(this.menu.ui);
 		this.menu.ui.connect('unrealize', function() {
 			p("hiding modal");
-			windowActor.set_opacity(255);
+			GnomeSystem.setWindowHidden(window, false);
 			Main.popModal(self.menu.ui);
 			self.menu = null;
 			return Clutter.EVENT_PROPAGATE;
 		});
-// this.menu.ui.set_background_color(new Clutter.Color({
-// 	red: 40,
-// 	green: 40,
-// 	blue: 40,
-// 	alpha: 20
-// }));
 	}
 
 	private hide_ui() {
 		if (this.menu) {
 			this.menu.destroy();
-		}
-	}
-
-	onLayoutSelect(window: MetaWindow, offset: Point) {
-		return function(action: Menu.Action, rect: Rect) {
-			switch (action) {
-				case Menu.Action.MINIMIZE:
-					window.minimize();
-				break;
-				
-				case Menu.Action.RESIZE:
-					MetaUtil.moveResize(window, Rect.move(rect, offset));
-				case Menu.Action.CANCEL: // fallthrough
-					MetaUtil.activate(window);
-				break;
-			}
 		}
 	}
 
