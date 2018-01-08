@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="366.4921mm"
-   height="366.4921mm"
-   viewBox="0 0 366.4921 366.4921"
+   width="382.70166mm"
+   height="382.4921mm"
+   viewBox="0 0 382.70166 382.4921"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
@@ -93,9 +93,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.22627417"
-     inkscape:cx="360.82852"
-     inkscape:cy="710.48194"
+     inkscape:zoom="0.3128125"
+     inkscape:cx="814.30492"
+     inkscape:cy="615.63729"
      inkscape:document-units="mm"
      inkscape:current-layer="g4848"
      showgrid="false"
@@ -105,16 +105,16 @@
      inkscape:window-y="27"
      inkscape:window-maximized="1"
      inkscape:snap-global="false"
-     fit-margin-top="2"
-     fit-margin-left="0"
-     fit-margin-right="0"
-     fit-margin-bottom="2"
+     fit-margin-top="10"
+     fit-margin-left="38"
+     fit-margin-right="38"
+     fit-margin-bottom="10"
      inkscape:pagecheckerboard="true">
     <inkscape:grid
        type="xygrid"
        id="grid834"
-       originx="-48.647627"
-       originy="-16.700929" />
+       originx="-40.280964"
+       originy="-8.7008229" />
   </sodipodi:namedview>
   <metadata
      id="metadata5">
@@ -132,7 +132,7 @@
      inkscape:label="coloured"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-48.647627,86.193065)"
+     transform="translate(-40.280963,94.193057)"
      style="display:inline">
     <path
        style="color:#000000;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;vector-effect:none;fill:#475666;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1.81182003;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.15577889;marker:none;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
@@ -157,7 +157,7 @@
   </g>
   <g
      style="display:none"
-     transform="translate(-48.647627,86.193065)"
+     transform="translate(-40.280963,94.193057)"
      id="g4828"
      inkscape:groupmode="layer"
      inkscape:label="mono-white">
@@ -186,7 +186,7 @@
      inkscape:label="mono-black"
      inkscape:groupmode="layer"
      id="g4848"
-     transform="translate(-48.647627,86.193065)"
+     transform="translate(-40.280963,94.193057)"
      style="display:none">
     <path
        style="color:#000000;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;vector-effect:none;fill:#000000;fill-opacity:0.75;fill-rule:evenodd;stroke:none;stroke-width:1.81182003;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.15577889;marker:none;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
@@ -214,7 +214,7 @@
      id="layer5"
      inkscape:label="backups"
      style="display:none"
-     transform="translate(-48.647627,-16.806935)">
+     transform="translate(-40.280963,-8.806943)">
     <a
        transform="translate(0,103)"
        style="display:inline;stroke-width:15;stroke-miterlimit:4;stroke-dasharray:none"
