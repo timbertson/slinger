@@ -89,7 +89,6 @@ module Menu {
 		private mouseMode: MouseMode;
 		private Sys: System<WindowType>;
 		private win: WindowType;
-		private workspaceOffset: Point; // XXX these calculations assume a top-left offset of visible screen region.
 
 		static show<WindowType>(Sys: System<WindowType>,
 				parent: Actor,
@@ -109,11 +108,9 @@ module Menu {
 				win: WindowType)
 		{
 			const screen: Rect = Sys.workspaceArea(win);
-			this.workspaceOffset = screen.pos;
 			log("getting windowRect of win " + win);
 			const windowRect = Sys.windowRect(win);
 			assert(windowRect, "windowRect()");
-			windowRect.pos = Point.subtract(windowRect.pos, this.workspaceOffset);
 
 			this.Sys = Sys;
 			p("creating menu at " + JSON.stringify(origin) + " with bounds " + JSON.stringify(screen));
@@ -134,7 +131,7 @@ module Menu {
 			canvas.set_size(menuSize.x, menuSize.y);
 			menu.set_content(canvas);
 
-			const position: Point = Point.subtract(Point.subtract(origin, this.workspaceOffset), Point.scaleConstant(0.5, menuSize));
+			const position: Point = Point.subtract(origin, Point.scaleConstant(0.5, menuSize));
 			menu.set_position(position.x, position.y);
 
 			const preview = this.preview = new Preview.LayoutPreview(Sys, screen.size, windowRect, win);
@@ -253,7 +250,7 @@ module Menu {
 				return;
 				
 				case Action.RESIZE:
-					this.Sys.moveResize(this.win, Rect.move(rect, this.workspaceOffset));
+					this.Sys.moveResize(this.win, rect);
 				break;
 
 				case Action.CANCEL:
