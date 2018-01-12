@@ -11,12 +11,12 @@ module Manipulations {
 		}
 	}
 
-	function scaleForWorkspace(workArea: Rect): number {
-		return (workArea.size.x + workArea.size.y) / 2;
+	function scaleForWorkspace(workArea: Point): number {
+		return (workArea.x + workArea.y) / 2;
 	}
 
-	function wrap(edgeAffinity: boolean, fn: (r: Rect, scale: number) => Rect): (r: Rect, w:Rect) => Rect {
-		return function(rect: Rect, workArea: Rect) {
+	function wrap(edgeAffinity: boolean, fn: (r: Rect, scale: number) => Rect): (r: Rect, w:Point) => Rect {
+		return function(rect: Rect, workArea: Point) {
 			const scale = scaleForWorkspace(workArea);
 			const newRect = fn(rect, scale);
 			if (edgeAffinity) {
@@ -27,7 +27,7 @@ module Manipulations {
 					bounds: workArea,
 				});
 			} else {
-				return Rect.moveWithin(newRect, workArea);
+				return Rect.scaleWithin(newRect, workArea);
 			}
 		}
 	}

@@ -15,7 +15,6 @@ module Preview {
 	export class LayoutPreview<WindowType> {
 		private Sys: System<WindowType>
 		private size: Point
-		private bounds: Rect
 		private base: Rect
 		private preview: Rect
 		private selection: MenuSelection;
@@ -32,7 +31,6 @@ module Preview {
 		{
 			this.Sys = Sys;
 			this.size = size;
-			this.bounds = { pos: Point.ZERO, size: this.size };
 			this.ui = Sys.newClutterActor();
 			this.ui.set_background_color(Sys.newClutterColor({
 				red: 80,
@@ -150,7 +148,7 @@ module Preview {
 						return;
 					}
 					var diff = Point.ofEvent(event, this.trackingOrigin);
-					this.preview = LayoutPreview.applyResize(this.resizeCorner, diff, this.base, this.bounds);
+					this.preview = LayoutPreview.applyResize(this.resizeCorner, diff, this.base, this.size);
 					// p('move diff ' + JSON.stringify(diff)
 					// 	+ ' (from origin ' + JSON.stringify(this.trackingOrigin) + ')'
 					// 	+ ' turned base ' + JSON.stringify(this.base)
@@ -160,7 +158,7 @@ module Preview {
 
 				case MouseMode.MOVE:
 					var diff = Point.ofEvent(event, this.trackingOrigin);
-					this.preview = LayoutPreview.applyMove(diff, this.base, this.bounds);
+					this.preview = LayoutPreview.applyMove(diff, this.base, this.size);
 					// p('move diff ' + JSON.stringify(diff)
 					// 	+ ' (from origin ' + JSON.stringify(this.trackingOrigin) + ')'
 					// 	+ ' turned base ' + JSON.stringify(this.base)
@@ -174,22 +172,21 @@ module Preview {
 			this.updateUi();
 		}
 
-		public applyManipulator(fn: (r: Rect, bounds: Rect) => Rect): void {
+		public applyManipulator(fn: (r: Rect, bounds: Point) => Rect): void {
 			if (this.preview === null) return;
-			this.preview = fn(this.preview, this.bounds);
+			this.preview = fn(this.preview, this.size);
 			this.updateUi();
 		}
 
-		static applyMove(diff: Point, base: Rect, bounds: Rect): Rect {
+		static applyMove(diff: Point, base: Rect, bounds: Point): Rect {
 			const ret = Rect.copy(base);
 			const scaled = Point.scaleConstant(MANIPULATION_SCALE, diff);
-			// Note: this doesn't consider bounds.pos, it's assumed to be (0,0)
-			ret.pos.x = Math.max(0, Math.min(ret.pos.x + scaled.x, bounds.size.x - ret.size.x));
-			ret.pos.y = Math.max(0, Math.min(ret.pos.y + scaled.y, bounds.size.y - ret.size.y));
+			ret.pos.x = Math.max(0, Math.min(ret.pos.x + scaled.x, bounds.x - ret.size.x));
+			ret.pos.y = Math.max(0, Math.min(ret.pos.y + scaled.y, bounds.y - ret.size.y));
 			return ret;
 		}
 
-		static applyResize(location: Anchor, diff: Point, base: Rect, bounds: Rect): Rect {
+		static applyResize(location: Anchor, diff: Point, base: Rect, bounds: Point): Rect {
 			const ret = Rect.copy(base);
 			const scaled = Point.scaleConstant(MANIPULATION_SCALE, diff);
 
@@ -206,7 +203,7 @@ module Preview {
 				// minimum diff is enough to bring this edge to the other side of this rect, plus MINIMUM_SIZE
 				// maximum diff is enough to bring this edge to the right bounds
 				// p('moveFar['+axis+']');
-				const diff = MathUtil.between(MINIMUM_SIZE - ret.size[axis], scaled[axis], bounds.size[axis] - ret.pos[axis] - ret.size[axis]);
+				const diff = MathUtil.between(MINIMUM_SIZE - ret.size[axis], scaled[axis], bounds[axis] - ret.pos[axis] - ret.size[axis]);
 				ret.size[axis] += diff;
 			}
 

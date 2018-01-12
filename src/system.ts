@@ -4,7 +4,7 @@
 
 interface System<WindowType> {
 	// workspace
-	workspaceArea(win: WindowType): Rect
+	workspaceArea(win: WindowType): Point
 	currentWindow(): WindowType
 	visibleWindows(): [WindowType, Array<WindowType>]
 	minimizedWindows(): Array<WindowType>

@@ -90,7 +90,7 @@ module GnomeSystem {
 	}
 
 	export function moveWindowToWorkspace(win: MetaWindow, idx: number) {
-		let ws = global.screen.get_workspace_by_index(newIdx)
+		let ws = global.screen.get_workspace_by_index(idx)
 		win.change_workspace_by_index(idx, false);
 		ws.activate_with_focus(win, global.get_current_time())
 	}
@@ -109,6 +109,11 @@ module GnomeSystem {
 			size: { x: metaRect.width, y: metaRect.height },
 		};
 	}
+
+	function size(metaRect: MetaRect): Point {
+		return { x: metaRect.width, y: metaRect.height };
+	}
+
 
 	export function windowRect(win: MetaWindow) {
 		return rect(win.get_frame_rect());
@@ -137,8 +142,8 @@ module GnomeSystem {
 		return global.screen.get_display()['focus-window'];
 	}
 
-	export function workspaceArea(win: MetaWindow): Rect {
-		return rect(win.get_work_area_current_monitor());
+	export function workspaceArea(win: MetaWindow): Point {
+		return size(win.get_work_area_current_monitor());
 	}
 
 	export function unmaximize(win: MetaWindow) {
@@ -172,11 +177,11 @@ module GnomeSystem {
 	}
 
 	export function visibleWindows(): [MetaWindow, Array<MetaWindow>] {
-		const currentWindow = this.currentWindow();
-		let windows = listWindows(currentWindow).filter(function(w: MetaWindow) {
+		const current = currentWindow();
+		let windows = listWindows(current).filter(function(w: MetaWindow) {
 			return !w.minimized;
 		});
-		return [currentWindow, visibleWindows];
+		return [current, windows];
 	}
 
 	export function minimizedWindows(): Array<MetaWindow> {

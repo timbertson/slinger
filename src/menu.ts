@@ -107,7 +107,7 @@ module Menu {
 				origin: Point,
 				win: WindowType)
 		{
-			const screen: Rect = Sys.workspaceArea(win);
+			const screen: Point = Sys.workspaceArea(win);
 			log("getting windowRect of win " + win);
 			const windowRect = Sys.windowRect(win);
 			assert(windowRect, "windowRect()");
@@ -120,7 +120,7 @@ module Menu {
 			this.mouseMode = MouseMode.MENU;
 
 			const backgroundActor = Sys.newClutterActor();
-			backgroundActor.set_size(screen.size.x, screen.size.y);
+			backgroundActor.set_size(screen.x, screen.y);
 
 			const menu = this.menu = Sys.newClutterActor();
 
@@ -134,7 +134,7 @@ module Menu {
 			const position: Point = Point.subtract(origin, Point.scaleConstant(0.5, menuSize));
 			menu.set_position(position.x, position.y);
 
-			const preview = this.preview = new Preview.LayoutPreview(Sys, screen.size, windowRect, win);
+			const preview = this.preview = new Preview.LayoutPreview(Sys, screen, windowRect, win);
 			const handlers = this.menuHandlers = new MenuHandlers.Handlers(Sys, menuSize, origin, canvas, preview);
 			canvas.connect('draw', handlers.draw);
 			backgroundActor.connect('motion-event', function(_actor: Actor, event: ClutterMouseEvent) {

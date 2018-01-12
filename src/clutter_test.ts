@@ -2,51 +2,6 @@
 /// <reference path="menu.ts" />
 /// <reference path="gnome_shell.ts" />
 
-// class FakeScreen implements MetaScreen {
-// 	get_display() {
-// 		return {
-// 			'focus-window': null
-// 		}
-// 	}
-// 	get_screen_number() { return 0 }
-// 	get_active_workspace_index() { return 0 }
-// 	get_n_workspaces() { return 3 }
-// 	get_active_workspace() { return null }
-// 	get_workspace_by_index(_i: number) { return null }
-// }
-//
-// class FakeMetaWindow implements MetaWindow {
-// 	private rect: Rect
-// 	private actor: Actor
-// 	minimized: boolean
-//
-// 	constructor(rect: Rect, actor: Actor) {
-// 		this.rect = rect
-// 		this.actor = actor
-// 		this.minimized = false
-// 	}
-// 	get_title() { return "Window!" }
-// 	get_window_type() { return 1; }
-// 	get_frame_rect() { return this.rect }
-// 	get_screen() { return new FakeScreen() }
-// 	get_compositor_private() { return this.actor }
-// 	minimize() { }
-// 	unminimize() { }
-// 	get_maximized() { return MaximizeFlags.Neither }
-// 	get_stable_sequence() { return 0 }
-// 	unmaximize(flags: number) { }
-// 	maximize(flags: number) {}
-// 	get_work_area_current_monitor() { return this.screen
-// 	move_to_workspace(idx: number): void
-// 	change_workspace_by_index(newIdx: number, append: boolean): void;
-// 	move_resize_frame(userAction: boolean,
-// 		x: number,
-// 		y: number,
-// 		w: number,
-// 		h: number): void
-// 	get_monitor(): number
-// }
-
 type ActorExt = Actor & {
 	get_position(): Array<number>;
 	get_size(): Array<number>;
@@ -84,12 +39,20 @@ class ClutterSystem implements System<ActorExt> {
 	currentWindow() {
 		return this.win;
 	}
+	workspaceIndex() { return 0 }
+	numWorkspaces() { return 1 }
+	activateWorkspace() { return 0 }
+	moveWindowToWorkspace() {}
+	getMaximized() { return false }
 	workspaceArea(_win: ActorExt) {
-		return this.windowRect(this.stage);
+		return this.windowRect(this.stage).size;
 	}
 	unmaximize(_win: ActorExt): void {}
+	unminimize(_win: ActorExt): void {}
+	stableSequence(_win: ActorExt) { return 0 }
+	windowTitle(_win: ActorExt) { return "" }
 	maximize(_win: ActorExt): void {}
-	visibleWindows(): Array<ActorExt> {
+	visibleWindows(): [ActorExt, Array<ActorExt>] {
 		return [this.win, [this.win]];
 	}
 	minimizedWindows(): Array<ActorExt> {

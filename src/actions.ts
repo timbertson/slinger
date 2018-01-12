@@ -17,7 +17,7 @@ interface WindowActions {
 
 module WindowActions {
 	export function Make<WindowType>(Sys: System<WindowType>): WindowActions {
-		function windowManipulator(fn: (r: Rect, bounds: Rect) => Rect): Function {
+		function windowManipulator(fn: (r: Rect, bounds: Point) => Rect): Function {
 			return function() {
 				const win = Sys.currentWindow();
 				if (win == null) {
@@ -147,7 +147,7 @@ module WindowActions {
 			if (win === null) return;
 
 			const workArea = Sys.workspaceArea(win);
-			const screenMidpoint = Rect.midpoint(workArea);
+			const screenMidpoint = Point.scaleConstant(0.5, workArea);
 
 			const windows = (visibleWindows
 				.map(function(w: WindowType) { return new SortableWindow(w, screenMidpoint); })
@@ -265,9 +265,9 @@ module WindowActions {
 
 				const leftCount = Math.floor(windows.length / 2);
 				const rightCount = windows.length - leftCount;
-				const width = bounds.size.x / 2;
-				const leftHeight = Math.floor(bounds.size.y / leftCount);
-				const rightHeight = Math.floor(bounds.size.y / rightCount);
+				const width = bounds.x / 2;
+				const leftHeight = Math.floor(bounds.y / leftCount);
+				const rightHeight = Math.floor(bounds.y / rightCount);
 
 				const tiles = windows.map(function(_w: WindowType, i: number) {
 					if (i < leftCount) {

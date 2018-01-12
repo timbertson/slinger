@@ -44,6 +44,10 @@ module Rect {
 		return r;
 	}
 
+	export function scaleWithin(rect: Rect, size: Point): Rect {
+		return moveWithin(rect, { pos: Point.ZERO, size: size });
+	}
+
 	export function midpoint(rect: Rect): Point {
 		return Point.add(rect.pos, Point.scaleConstant(0.5, rect.size));
 	}
@@ -52,29 +56,29 @@ module Rect {
 		margin: number
 		original: Rect
 		modified: Rect
-		bounds: Rect
+		bounds: Point
 	}): Rect {
 		const abs = Math.abs;
 		const { original, bounds } = opts;
-		const modified = moveWithin(opts.modified, bounds);
+		const modified = scaleWithin(opts.modified, bounds);
 
 		function close(a: number, b: number) {
 			return abs(a - b) < opts.margin;
 		}
 
 		function axisDiff(axis: Axis): number {
-			const near = close(bounds.pos[axis], original.pos[axis]);
-			const far = close((bounds.pos[axis] + bounds.size[axis]), (original.pos[axis] + original.size[axis]));
+			const near = close(0, original.pos[axis]);
+			const far = close((bounds[axis]), (original.pos[axis] + original.size[axis]));
 
 			// p("near affinity["+axis+"] = "+near);
 			// p("far affinity["+axis+"] = "+far);
 			if (near && far) return 0; // can't do anything for a window attached to both edges
 			if (near) {
 				// p("maintaining near affinity");
-				return bounds.pos[axis] - modified.pos[axis];
+				return -modified.pos[axis];
 			} else if (far) {
 				// p("maintaining far affinity");
-				return (bounds.pos[axis] + bounds.size[axis]) - (modified.pos[axis] + modified.size[axis]);
+				return (bounds[axis]) - (modified.pos[axis] + modified.size[axis]);
 			}
 			return 0;
 		}

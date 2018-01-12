@@ -123,9 +123,8 @@ class Extension {
 			return;
 		}
 
-		const workArea: Rect = GnomeSystem.workspaceArea(window);
-		const pos = workArea.pos;
-		this.menu.ui.set_position(pos.x, pos.y);
+		const workspaceArea = window.get_work_area_current_monitor();
+		this.menu.ui.set_position(workspaceArea.x, workspaceArea.y);
 
 		Main.pushModal(this.menu.ui);
 		this.menu.ui.connect('unrealize', function() {
