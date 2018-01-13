@@ -138,7 +138,8 @@ module Menu {
 			const handlers = this.menuHandlers = new MenuHandlers.Handlers(Sys, menuSize, origin, canvas, preview);
 			canvas.connect('draw', handlers.draw);
 			backgroundActor.connect('motion-event', function(_actor: Actor, event: ClutterMouseEvent) {
-				self.menuHandlers.onMouseMove(self.mouseMode, event);
+				let position = Sys.translateEventCoordinates(Point.ofEvent(event), win);
+				self.menuHandlers.onMouseMove(self.mouseMode, position);
 				return Sys.Clutter.EVENT_STOP;
 			});
 

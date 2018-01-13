@@ -48,6 +48,7 @@ class ClutterSystem implements System<ActorExt> {
 		return this.windowRect(this.stage).size;
 	}
 	unmaximize(_win: ActorExt): void {}
+	translateEventCoordinates(p: Point, _: ActorExt): Point { return p }
 	unminimize(_win: ActorExt): void {}
 	stableSequence(_win: ActorExt) { return 0 }
 	windowTitle(_win: ActorExt) { return "" }

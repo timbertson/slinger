@@ -116,7 +116,8 @@ module GnomeSystem {
 
 
 	export function windowRect(win: MetaWindow) {
-		return rect(win.get_frame_rect());
+		let globalRect = rect(win.get_frame_rect());
+		return Rect.move(globalRect, Point.scaleConstant(-1, workspaceOffset(win)))
 	}
 
 	export function minimize(win: MetaWindow) {
@@ -127,10 +128,11 @@ module GnomeSystem {
 		win.unminimize();
 	}
 
-	export function moveResize(win: MetaWindow, rect: Rect) {
+	export function moveResize(win: MetaWindow, workspaceRect: Rect) {
 		if(win.get_maximized() !== MaximizeFlags.Neither) {
 			unmaximize(win);
 		}
+		let rect = Rect.move(workspaceRect, workspaceOffset(win));
 		win.move_resize_frame(true,
 			rect.pos.x,
 			rect.pos.y,
@@ -140,6 +142,14 @@ module GnomeSystem {
 
 	export function currentWindow(): MetaWindow {
 		return global.screen.get_display()['focus-window'];
+	}
+
+	export function workspaceOffset(win: MetaWindow): Point {
+		return rect(win.get_work_area_current_monitor()).pos;
+	}
+
+	export function translateEventCoordinates(point: Point, win: MetaWindow): Point {
+		return Point.subtract(point, workspaceOffset(win));
 	}
 
 	export function workspaceArea(win: MetaWindow): Point {

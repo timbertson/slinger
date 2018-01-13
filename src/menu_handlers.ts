@@ -215,8 +215,8 @@ module MenuHandlers {
 			}
 		}
 
-		onMouseMove(mode: MouseMode, event: ClutterMouseEvent): ClutterEventResponse {
-			const point = this.currentMouseRelative = Point.ofEvent(event, this.origin);
+		onMouseMove(mode: MouseMode, eventPoint: Point): ClutterEventResponse {
+			const point = this.currentMouseRelative = Point.subtract(eventPoint, this.origin);
 			if (mode === MouseMode.MENU) {
 				const { x, y } = point;
 				const radius = Math.sqrt(Math.pow(x,2) + Math.pow(y,2));
@@ -232,7 +232,7 @@ module MenuHandlers {
 					this.updateSelection(MenuSelection.Outer(outerIndex(angle)));
 				}
 			}
-			this.preview.onMouseMove(mode, event);
+			this.preview.onMouseMove(mode, eventPoint);
 			return this.Sys.Clutter.EVENT_STOP;
 		}
 

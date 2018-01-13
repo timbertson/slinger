@@ -44,15 +44,9 @@ module Point {
 		return p.x === x && p.y === y;
 	}
 
-	export function ofEvent(event: ClutterMouseEvent, origin: Point): Point {
+	export function ofEvent(event: ClutterMouseEvent): Point {
 		const [absx,absy] = event.get_coords();
-		if (origin == null) {
-			return { x: absx, y: absy };
-		} else {
-			const x = absx - origin.x;
-			const y = absy - origin.y;
-			return { x, y };
-		}
+		return { x: absx, y: absy };
 	}
 
 	export function magnitude(p: Point) {

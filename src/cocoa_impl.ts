@@ -85,6 +85,10 @@ module Wrapper {
 				setWindowHidden: get.fn('setWindowHidden'),
 				stableSequence: get.fn('stableSequence'),
 				windowTitle: get.fn('windowTitle'),
+
+				// events are already sent in workspace coordinate system
+				translateEventCoordinates: function(point: Point, _win: any) { return point; },
+
 				Clutter: makeClutter(get.prop('Clutter')),
 				Cairo: makeCairo(get.prop('Cairo')),
 

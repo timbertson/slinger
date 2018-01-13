@@ -22,12 +22,6 @@ function failsafe(fn: Function, desc?: string) {
 	}
 }
 
-module WindowFilter {
-	// export function visible(w: MetaWindow) {
-	// 	return w.get_minimized() !== CBoolean.True;
-	// }
-}
-
 class Extension {
 	private disable_actions: Array<Function>;
 	menu: Menu.Menu<MetaWindow>;
@@ -113,9 +107,11 @@ class Extension {
 		const pointer = display.get_device_manager().get_client_pointer();
 		const mousePos = pointer.get_position();
 
+		const workspaceOffset = GnomeSystem.workspaceOffset(window);
+
 		this.menu = Menu.Menu.show(GnomeSystem,
 			(global.window_group as Actor),
-			{ x: mousePos[1], y: mousePos[2]},
+			Point.subtract({ x: mousePos[1], y: mousePos[2]}, workspaceOffset),
 			window
 		);
 
@@ -123,8 +119,7 @@ class Extension {
 			return;
 		}
 
-		const workspaceArea = window.get_work_area_current_monitor();
-		this.menu.ui.set_position(workspaceArea.x, workspaceArea.y);
+		this.menu.ui.set_position(workspaceOffset.x, workspaceOffset.y);
 
 		Main.pushModal(this.menu.ui);
 		this.menu.ui.connect('unrealize', function() {

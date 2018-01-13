@@ -33,4 +33,5 @@ interface System<WindowType> {
 	newClutterActor(): Actor
 	newClutterCanvas(): ClutterCanvas
 	newClutterColor(components: { red: number, green: number, blue: number, alpha: number}): ClutterColor
+	translateEventCoordinates(point: Point, win: WindowType): Point
 }
