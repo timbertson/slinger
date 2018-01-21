@@ -1,0 +1,8 @@
+#!bash -eu
+gup compile
+cd extension
+zip -r "$1" * \
+	--exclude='*.gup*' \
+	--exclude='cocoa_impl.js*' \
+	--exclude='clutter_test.js*' \
+	;

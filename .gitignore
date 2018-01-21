@@ -1,3 +1,5 @@
 /extension/*.js
 !/extension/extension.js
 gschemas.compiled
+nix/local.tgz.gup
+slinger.zip
