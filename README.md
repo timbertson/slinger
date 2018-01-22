@@ -1,18 +1,13 @@
 <img src="http://gfxmonk.net/dist/status/project/slinger.png">
 
-# Overview:
 
-Slinger was born out of [shellshape](https://github.com/timbertson/shellshape/), a Gnome Shell extension I created for automatically tiling windows. Shellshape is useful, but it's also buggy and has a lot of ugly interactions with the window system (which itself has plenty of bugs).
+<img src="https://github.com/timbertson/slinger/raw/master/img/icon.png" width="128" height="128" align="left">
 
-Slinger is a simpler layout utility, which maintains many of the window manipulation shortcuts but explicitly does not do any automatic window management - it only does something when you tell it to.
+# Slinger:
 
-In practice, I've found that slinger is slightly slower than shellshape, but allows me more control (it never gets in my way, and I end up with windows just as I want them rather than "close enough").
+Slinger is a simple app for window manipulation. It provides multiple methods (via both mouse and keyboard) for moving and sizing windows quickly. [**Here's a quick screencast**](https://www.youtube.com/watch?v=JnZDxHSlQKM). The main interface is a circular popup menu which allows quick selection of various presets (half screen + quarter screen), plus plenty of mouse + keyboard shortcuts for moving & resizing.
 
-Truthfully, slinger was created because shellshape is not worth my time to maintain. There are many unfixable bugs due to the interaction with gnome-shell, and there is a frustrating amount of bookkeeping state and workarounds that need to be maintained so shellshape has an accurate view of the world at all time. Slinger was designed to be stateless, which makes for a simpler codebase with less bugs.
-
-# OSX version
-
-Another benefit of a stateless app is that it's more easily portable to different window systems. There is an OSX version [here](https://github.com/timbertson/Slinger.app), which lacks a few features, but mostly works.
+---
 
 ### Global hotkeys
 
@@ -56,5 +51,21 @@ These can be uses as-is in "modify mode", or used globally (without showing slin
  - shift+l: grow horizontal
  - shift+i: shrink vertical
  - shift+u: grow vertical
+
+---
+
+### History.
+
+Slinger was born out of [shellshape](https://github.com/timbertson/shellshape/), a Gnome Shell extension I created for automatically tiling windows. Shellshape is useful, but it's also buggy and has a lot of ugly interactions with the window system (which itself has plenty of bugs).
+
+Slinger is a simpler layout utility, which maintains many of the window manipulation shortcuts but explicitly does not do any automatic window management - it only does something when you tell it to.
+
+In practice, I've found that slinger is slightly slower than shellshape, but allows me more control (it never gets in my way, and I end up with windows just as I want them rather than "close enough").
+
+Truthfully, slinger was created because shellshape is not worth my time to maintain. There are many unfixable bugs due to the interaction with gnome-shell, and there is a frustrating amount of bookkeeping state and workarounds that need to be maintained so shellshape has an accurate view of the world at all time. Slinger was designed to be stateless, which makes for a simpler codebase with less bugs.
+
+# OSX version
+
+Another benefit of a stateless app is that it's more easily portable to different window systems. There is an OSX version [here](https://github.com/timbertson/Slinger.app), which lacks a few features, but mostly works.
 
 
