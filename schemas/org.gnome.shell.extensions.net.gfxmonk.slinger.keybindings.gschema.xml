@@ -16,7 +16,7 @@
 
 		<key type="as" name="slinger-grow-horizontal">             <default>["&lt;Mod4&gt;&lt;Shift&gt;l"]</default><summary>Increase window's width</summary><description>Increase window's width.</description></key>
 		<key type="as" name="slinger-shrink-horizontal">           <default>["&lt;Mod4&gt;&lt;Shift&gt;h"]</default><summary>Decrease window's width</summary><description>Decrease window's width.</description></key>
-		<key type="as" name="slinger-grow-vertical">               <default>["&lt;Mod5&gt;&lt;Shift&gt;u"]</default><summary>Increase window's height</summary><description>Increase window's height.</description></key>
+		<key type="as" name="slinger-grow-vertical">               <default>["&lt;Mod4&gt;&lt;Shift&gt;u"]</default><summary>Increase window's height</summary><description>Increase window's height.</description></key>
 		<key type="as" name="slinger-shrink-vertical">             <default>["&lt;Mod4&gt;&lt;Shift&gt;i"]</default><summary>Decrease window's height</summary><description>Decrease window's height.</description></key>
 		<key type="as" name="slinger-grow">                        <default>["&lt;Mod4&gt;equal"]</default><summary>Increase window's size</summary><description>Increase window's size.</description></key>
 		<key type="as" name="slinger-shrink">                      <default>["&lt;Mod4&gt;minus"]</default><summary>Decrease window's size</summary><description>Decrease window's size.</description></key>
