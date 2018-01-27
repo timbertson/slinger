@@ -54,6 +54,26 @@ These can be uses as-is in "modify mode", or used globally (without showing slin
 
 ---
 
+### Build/install instructions
+
+Install required dependencies:
+
+ - `tsc` (typescript)
+
+Compile:
+
+```
+tools/gup compile
+```
+
+Install:
+
+```
+ln -sfn $PWD/extension ~/.local/share/gnome-shell/extensions/slinger@gfxmonk.net
+```
+
+---
+
 ### History.
 
 Slinger was born out of [shellshape](https://github.com/timbertson/shellshape/), a Gnome Shell extension I created for automatically tiling windows. Shellshape is useful, but it's also buggy and has a lot of ugly interactions with the window system (which itself has plenty of bugs).

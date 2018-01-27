@@ -1,5 +1,9 @@
 #!/bin/bash
 set -eu
+if [ "${GUP_XTRACE:-}" = 1 ]; then
+	set -x
+	pwd
+fi
 gup --always
 base="$(basename "$2" .js)"
 if [ -f mode.sh ]; then
