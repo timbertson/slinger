@@ -56,4 +56,77 @@ module Manipulations {
 			};
 		})
 	}
+
+	class RectAndArea {
+		area: number;
+		rect: Rect;
+		constructor(rect: Rect) {
+			this.rect = rect;
+			this.area = Rect.area(rect);
+		}
+
+		static from(r: Rect): RectAndArea {
+			return new RectAndArea(r);
+		}
+
+		intersection(other: RectAndArea): RectAndArea | null {
+			let intersection = Rect.intersection(this.rect, other.rect);
+			if (intersection == null) return null;
+			return new RectAndArea(intersection);
+		}
+
+		static descendingSortOrder(a: RectAndArea, b: RectAndArea): number {
+			return a.area - b.area;
+		}
+	}
+
+	function freeRectsAround(workArea: Point, win: Rect) {
+		let bottomRight = Point.add(win.pos, win.size);
+
+		let top =    { pos: Point.ZERO, size: { x: workArea.x, y: win.pos.y } };
+		let left =   { pos: Point.ZERO, size: { x: win.pos.x, y: workArea.y } };
+		let bottom = { pos: { x: 0, y: bottomRight.y }, size: { x: workArea.x, y: workArea.y - bottomRight.y } };
+		let right =  { pos: { x: bottomRight.x, y: 0 }, size: { x: workArea.x - bottomRight.x, y: workArea.y } };
+
+		return ([top, left, bottom, right]
+			.filter(Rect.isPositive)
+			.map(RectAndArea.from)
+			.sort(RectAndArea.descendingSortOrder)
+		);
+	}
+
+	export function largestFreeRect(workArea: Point, windows: Array<Rect>, minArea: Number): Rect | null {
+		let freeWindowAreas = windows.map(win => freeRectsAround(workArea, win));
+
+		var largest: RectAndArea = null;
+		function worthPursuing(candidate: RectAndArea) {
+			if (candidate == null || candidate.area < minArea) return false;
+			return largest == null || candidate.area > largest.area;
+		}
+
+		// pick one free rect per window
+		function recurse(rect: RectAndArea, remaining: Array<Array<RectAndArea>>) {
+			if (remaining.length == 0) {
+				// we've picked one free rect from each window, and the intersection is nonzero
+				if (worthPursuing(rect)) {
+					largest = rect;
+				}
+				return;
+			}
+			let nextSet = remaining[0];
+			// TODO: we'd save accumulations using indexes
+			let nextRemaining = remaining.slice(1);
+
+			nextSet.forEach(function(candidate) {
+				let intersection = rect.intersection(candidate);
+				if (worthPursuing(intersection)) {
+					// valid intersection which isn't already smaller than our largest candidate, keep going
+					recurse(intersection, nextRemaining);
+				}
+			})
+		}
+		recurse(new RectAndArea({ pos: Point.ZERO, size: workArea}), freeWindowAreas);
+		if (largest == null || largest.area < minArea) return null;
+		return largest.rect;
+	}
 }
