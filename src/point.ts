@@ -34,11 +34,15 @@ module Point {
 	export function subtract(a: Point, b: Point): Point {
 		return {
 			x: a.x - b.x,
-			y: a.y- b.y
+			y: a.y - b.y
 		}
 	}
 
 	export const ZERO = { x: 0, y: 0 };
+
+	export function isPositive(p: Point): boolean {
+		return p.x > 0 && p.y > 0;
+	}
 
 	export function eqTo(p: Point, x: number, y: number) {
 		return p.x === x && p.y === y;

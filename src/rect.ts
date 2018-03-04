@@ -7,6 +7,14 @@ module Rect {
 		return { pos: Point.copy(r.pos), size: Point.copy(r.size) };
 	}
 
+	export function area(r: Rect): number {
+		return r.size.x * r.size.y;
+	}
+
+	export function isPositive(r: Rect): boolean {
+		return Point.isPositive(r.size);
+	}
+
 	export function closestCorner(r: Rect, p: Point): Anchor {
 		const pow = Math.pow;
 		const sqrt = Math.sqrt;
@@ -87,5 +95,24 @@ module Rect {
 			x: axisDiff(Axis.x),
 			y: axisDiff(Axis.y),
 		});
+	}
+
+	export function intersection(a: Rect, b: Rect): Rect {
+		let pos = {
+			x: Math.max(a.pos.x, b.pos.x),
+			y: Math.max(a.pos.y, b.pos.y),
+		}
+		let bottomRightA = Point.add(a.pos, a.size);
+		let bottomRightB = Point.add(b.pos, b.size);
+		let bottomRight = {
+			x: Math.min(bottomRightA.x, bottomRightB.x),
+			y: Math.min(bottomRightA.y, bottomRightB.y),
+		}
+		let size = Point.subtract(bottomRight, pos);
+		if (Point.isPositive(size)) {
+			return { pos, size };
+		} else {
+			return null;
+		}
 	}
 }

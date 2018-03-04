@@ -96,6 +96,7 @@ class Extension {
 		handle('slinger-unminimize-window', windowActions.unminimize);
 
 		handle('slinger-distribute', windowActions.distribute);
+		handle('slinger-fill-available-space', windowActions.fillAvailableSpace);
 	}
 
 	private show_ui() {

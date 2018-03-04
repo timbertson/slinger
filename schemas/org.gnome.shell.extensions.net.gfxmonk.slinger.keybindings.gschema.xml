@@ -30,6 +30,7 @@
 		<key type="as" name="slinger-minimize-window">             <default>["&lt;Mod4&gt;x"]</default><summary>Minimize window</summary><description>Minimize window.</description></key>
 		<key type="as" name="slinger-unminimize-window">           <default>["&lt;Mod4&gt;&lt;Shift&gt;x"]</default><summary>Un-minimize last window</summary><description>Un-minimize last window.</description></key>
 
-		<key type="as" name="slinger-distribute">                  <default>["&lt;Mod4&gt;&lt;Shift&gt;8"]</default><summary>Un-minimize last window</summary><description>Un-minimize last window.</description></key>
+		<key type="as" name="slinger-distribute">                  <default>["&lt;Mod4&gt;&lt;Shift&gt;8"]</default><summary>Distribute windows</summary><description>Distribute windows.</description></key>
+		<key type="as" name="slinger-fill-available-space">        <default>["&lt;Mod4&gt;8"]</default><summary>Fill available space</summary><description>Fill available space.</description></key>
 	</schema>
 </schemalist>

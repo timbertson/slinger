@@ -12,6 +12,7 @@ interface WindowActions {
 	toggleMaximize(): void
 	minimize(): void
 	unminimize(): void
+	fillAvailableSpace(): void
 	distribute(): void
 }
 
@@ -202,6 +203,22 @@ module WindowActions {
 			}
 		}
 
+		function fillAvailableSpace() {
+			log("fillAvailableSpace()");
+			const [win, visibleWindows] = Sys.visibleWindows();
+			if (win === null) return;
+			const workArea = Sys.workspaceArea(win);
+			const MIN_AREA = Math.min(workArea.x, workArea.y) * 20;
+			const otherWindows = visibleWindows.filter(candidate => candidate !== win);
+			log("otherWindows.length = " + otherWindows.length);
+			const newRect = Manipulations.largestFreeRect(workArea, otherWindows.map(Sys.windowRect), MIN_AREA);
+			log("fillAvailableSpace(): found rect " + JSON.stringify(newRect));
+			if (newRect !== null) {
+				Sys.moveResize(win, newRect);
+				Sys.activateLater(win);
+			}
+		}
+
 		class RectMetrics {
 			rect: Rect
 			midpoint: Point
@@ -210,7 +227,7 @@ module WindowActions {
 			constructor(rect: Rect) {
 				this.rect = rect;
 				this.midpoint = Rect.midpoint(rect);
-				this.size = rect.size.x * rect.size.y;
+				this.size = Rect.area(rect);
 			}
 
 			diff(other: RectMetrics) {
@@ -324,7 +341,8 @@ module WindowActions {
 
 		return {
 			moveAction, resizeAction, switchWorkspace, moveWindowWorkspace,
-			toggleMaximize, minimize, unminimize, selectWindow, swapWindow, distribute
+			toggleMaximize, minimize, unminimize, selectWindow, swapWindow,
+			fillAvailableSpace, distribute
 		};
 	}
 }

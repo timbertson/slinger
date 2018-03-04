@@ -1,8 +1,11 @@
-{stdenv, nodePackages, gup, glib}:
+{stdenv, nodePackages, gup, glib, enableTests ? false }:
 stdenv.mkDerivation {
 	name = "slinger";
 	src = null; # TODO
-	buildInputs = [ gup nodePackages.typescript glib ];
+	buildInputs = [ gup glib ] ++ (
+		with nodePackages;
+		[typescript] ++ (if enableTests then [mocha] else [])
+	);
 	buildPhase = ''
 		gup compile
 	'';
