@@ -143,9 +143,14 @@ module WindowActions {
 			}
 		}
 
-		function withWindowPair(diff: number, fn: (a: WindowType, b: WindowType) => void): void {
+		function withWindowPair(diff: number, fn: (a: WindowType, b: WindowType) => void): boolean {
 			const [win, visibleWindows] = Sys.visibleWindows();
-			if (win === null) return;
+			if (visibleWindows.length < 2) {
+				return false; // no pair
+			}
+			if (win === null) {
+				return null; // no active window
+			}
 
 			const workArea = Sys.workspaceArea(win);
 			const screenMidpoint = Point.scaleConstant(0.5, workArea);
@@ -171,7 +176,7 @@ module WindowActions {
 			}
 			if (windowIdx === -1) {
 				p("current window not found in visible windows")
-				return;
+				return null;
 			}
 
 			// p("windows (active="+ windowIdx +"): " + JSON.stringify(windows.map(function(w: SortableWindow) {
@@ -181,13 +186,20 @@ module WindowActions {
 			let newIdx = (windowIdx + diff) % windows.length;
 			if (newIdx < 0) newIdx += windows.length;
 			fn(win, windows[newIdx].win);
+			return true;
 		}
 
 		function selectWindow(diff: number) {
 			return function() {
-				withWindowPair(diff, function(_a: WindowType, b: WindowType) {
+				if (withWindowPair(diff, function(_a: WindowType, b: WindowType) {
 					Sys.activate(b);
-				})
+				}) === null) {
+					p("No active window, activating the first visible window");
+					let arbitraryWindow = Sys.visibleWindows()[1][0];
+					if (arbitraryWindow !== undefined) {
+						Sys.activate(arbitraryWindow);
+					}
+				}
 			}
 		}
 
