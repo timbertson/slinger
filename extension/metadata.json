@@ -1,5 +1,5 @@
 {
-  "shell-version": ["3.20", "3.22"],
+  "shell-version": [ "3.30" ],
   "uuid": "slinger@gfxmonk.net",
   "name": "slinger",
   "description": "Sling windows around efficiently",

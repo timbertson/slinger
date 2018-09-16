@@ -9,11 +9,17 @@ interface MetaRect {
 	height: number
 }
 
-interface MetaScreen {
-	get_display(): {
-		'focus-window': MetaWindow
-	}
+interface MetaDisplay {
+	get_x11_display(): MetaX11Display
+	get_workspace_manager(): MetaWorkspaceManager
+	'focus-window': MetaWindow
+}
+
+interface MetaX11Display {
 	get_screen_number(): number
+}
+
+interface MetaWorkspaceManager {
 	get_active_workspace_index(): number
 	get_active_workspace(): MetaWorkspace
 	get_n_workspaces(): number
@@ -21,7 +27,9 @@ interface MetaScreen {
 }
 
 type Global = {
-	screen: MetaScreen
+	display: MetaDisplay
+	x11_display: MetaX11Display
+	workspace_manager: MetaWorkspaceManager
 	window_group: {}
 	get_current_time: () => number
 }
@@ -42,7 +50,7 @@ interface MetaWindow {
 	get_title(): string
 	get_window_type(): number
 	get_frame_rect(): MetaRect
-	get_screen(): MetaScreen
+	get_display(): MetaDisplay
 	get_compositor_private(): Actor
 	minimize(): void
 	unminimize(): void
@@ -77,20 +85,20 @@ module GnomeSystem {
 	}
 
 	export function numWorkspaces(): number {
-		return global.screen.get_n_workspaces();
+		return global.workspace_manager.get_n_workspaces();
 	}
 
 	export function workspaceIndex(): number {
-		return global.screen.get_active_workspace_index();
+		return global.workspace_manager.get_active_workspace_index();
 	}
 
 	export function activateWorkspace(idx: number) {
-		let ws = global.screen.get_workspace_by_index(idx)
+		let ws = global.workspace_manager.get_workspace_by_index(idx)
 		ws.activate(global.get_current_time());
 	}
 
 	export function moveWindowToWorkspace(win: MetaWindow, idx: number) {
-		let ws = global.screen.get_workspace_by_index(idx)
+		let ws = global.workspace_manager.get_workspace_by_index(idx)
 		win.change_workspace_by_index(idx, false);
 		ws.activate_with_focus(win, global.get_current_time())
 	}
@@ -141,7 +149,7 @@ module GnomeSystem {
 	}
 
 	export function currentWindow(): MetaWindow {
-		return global.screen.get_display()['focus-window'];
+		return global.display['focus-window'];
 	}
 
 	export function workspaceOffset(win: MetaWindow): Point {
@@ -176,11 +184,11 @@ module GnomeSystem {
 
 	function listWindows(win?: MetaWindow): Array<MetaWindow> {
 		// XXX is this multi-monitor compatible?
-		const screen = (win == null) ? global.screen : win.get_screen();
-		const screenNo = screen.get_screen_number();
-		return screen.get_active_workspace().list_windows().filter(function(w: MetaWindow) {
+		const display = (win == null) ? global.display : win.get_display();
+		const screenNo = display.get_x11_display().get_screen_number();
+		return display.get_workspace_manager().get_active_workspace().list_windows().filter(function(w: MetaWindow) {
 			return (
-				w.get_screen().get_screen_number() == screenNo
+				w.get_display().get_x11_display().get_screen_number() == screenNo
 				&& VISIBLE_WINDOW_TYPES.indexOf(w.get_window_type()) !== -1
 			);
 		});
