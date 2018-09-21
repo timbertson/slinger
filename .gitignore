@@ -3,3 +3,6 @@
 gschemas.compiled
 nix/local.tgz.gup
 slinger.zip
+.gup/
+extension/.gup/
+schemas/.gup/
