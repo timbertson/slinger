@@ -9,6 +9,7 @@ interface WindowActions {
 	moveWindowWorkspace(diff: number): Function
 	selectWindow(diff: number): Function
 	swapWindow(diff: number): Function
+	swapLargestWindow(): Function
 	toggleMaximize(): void
 	minimize(): void
 	unminimize(): void
@@ -93,6 +94,11 @@ module WindowActions {
 			Sys.activateLater(win);
 		}
 
+		function sizeSortOrder(rect: Rect, _screenMidpoint: Point) {
+			// negative puts biggest window first
+			return -Rect.area(rect);
+		}
+
 		function radialSortOrder(rect: Rect, screenMidpoint: Point) {
 			const midpoint = Rect.midpoint(rect);
 			const vector = Point.subtract(screenMidpoint, midpoint);
@@ -129,9 +135,8 @@ module WindowActions {
 			order: number
 			private _stableSequence: number
 
-			constructor(win: WindowType, midpoint: Point) {
-				this.win = win;
-				this.order = radialSortOrder(Sys.windowRect(win), midpoint);
+			constructor(win: WindowType, midpoint: Point, ordering: (rect: Rect, screenMidpoint: Point) => number) { this.win = win;
+				this.order = ordering(Sys.windowRect(win), midpoint);
 				this._stableSequence = null;
 			}
 
@@ -143,7 +148,18 @@ module WindowActions {
 			}
 		}
 
-		function withWindowPair(diff: number, fn: (a: WindowType, b: WindowType) => void): boolean {
+		function withWindowDiff(diff: number, fn: (a: WindowType, b: WindowType) => void): boolean {
+			return withWindowPair(
+				radialSortOrder,
+				function(i) { return i + diff; },
+				fn);
+		}
+
+		function withWindowPair(
+			ordering: (rect: Rect, screenMidpoint: Point) => number,
+			selectIndex: (current: number) => number,
+			fn: (a: WindowType, b: WindowType) => void
+		): boolean {
 			const [win, visibleWindows] = Sys.visibleWindows();
 			if (visibleWindows.length < 2) {
 				return false; // no pair
@@ -156,7 +172,7 @@ module WindowActions {
 			const screenMidpoint = Point.scaleConstant(0.5, workArea);
 
 			const windows = (visibleWindows
-				.map(function(w: WindowType) { return new SortableWindow(w, screenMidpoint); })
+				.map(function(w: WindowType) { return new SortableWindow(w, screenMidpoint, ordering); })
 				.sort(function(a: SortableWindow, b: SortableWindow) {
 					if (a.order === b.order) {
 						// ensure a stable sort by using index position for equivalent windows
@@ -183,7 +199,11 @@ module WindowActions {
 			// 	return [ Sys.windowTitle(w.win), w.order, w.stableSequence(), Rect.copy(Sys.windowRect(w.win))];
 			// })));
 
-			let newIdx = (windowIdx + diff) % windows.length;
+			let newIdx = selectIndex(windowIdx);
+			if (newIdx === null || newIdx === windowIdx) {
+				return false;
+			}
+			newIdx = newIdx % windows.length;
 			if (newIdx < 0) newIdx += windows.length;
 			fn(win, windows[newIdx].win);
 			return true;
@@ -191,7 +211,7 @@ module WindowActions {
 
 		function selectWindow(diff: number) {
 			return function() {
-				if (withWindowPair(diff, function(_a: WindowType, b: WindowType) {
+				if (withWindowDiff(diff, function(_a: WindowType, b: WindowType) {
 					Sys.activate(b);
 				}) === null) {
 					p("No active window, activating the first visible window");
@@ -205,13 +225,22 @@ module WindowActions {
 
 		function swapWindow(diff: number) {
 			return function() {
-				withWindowPair(diff, function(a: WindowType, b: WindowType) {
-					const ar = Sys.windowRect(a);
-					const br = Sys.windowRect(b);
-					Sys.moveResize(b, ar);
-					Sys.moveResize(a, br);
-					Sys.activateLater(a); // necessary?
-				})
+				withWindowDiff(diff, swapWindows);
+			}
+		}
+
+		function swapWindows(a: WindowType, b: WindowType) {
+			const ar = Sys.windowRect(a);
+			const br = Sys.windowRect(b);
+			Sys.moveResize(b, ar);
+			Sys.moveResize(a, br);
+			Sys.activateLater(a); // necessary?
+		}
+
+		function swapLargestWindow() {
+			return function() {
+				let selectFirst = function(_currentIdx: number) { return 0; };
+				withWindowPair(sizeSortOrder, selectFirst, swapWindows)
 			}
 		}
 
@@ -354,7 +383,7 @@ module WindowActions {
 		return {
 			moveAction, resizeAction, switchWorkspace, moveWindowWorkspace,
 			toggleMaximize, minimize, unminimize, selectWindow, swapWindow,
-			fillAvailableSpace, distribute
+			swapLargestWindow, fillAvailableSpace, distribute
 		};
 	}
 }

@@ -8,6 +8,7 @@
 
 		<key type="as" name="slinger-swap-next-window">            <default>["&lt;Mod4&gt;&lt;Shift&gt;j"]</default><summary>Swap with next window</summary><description>Swap with next window.</description></key>
 		<key type="as" name="slinger-swap-prev-window">            <default>["&lt;Mod4&gt;&lt;Shift&gt;k"]</default><summary>Swap with prev window</summary><description>Swap with prev window.</description></key>
+		<key type="as" name="slinger-swap-largest-window">         <default>["&lt;Mod4&gt;&lt;Shift&gt;space"]</default><summary>Swap with prev window</summary><description>Swap with prev window.</description></key>
 
 		<key type="as" name="slinger-move-right">                  <default>["&lt;Mod4&gt;l"]</default><summary>Grow master area</summary><description>Grow master area.</description></key>
 		<key type="as" name="slinger-move-left">                   <default>["&lt;Mod4&gt;h"]</default><summary>Shrink master area</summary><description>Shrink master area.</description></key>

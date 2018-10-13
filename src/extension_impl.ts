@@ -72,6 +72,7 @@ class Extension {
 
 		handle('slinger-swap-next-window', windowActions.swapWindow(1));
 		handle('slinger-swap-prev-window', windowActions.swapWindow(-1));
+		handle('slinger-swap-largest-window', windowActions.swapLargestWindow());
 
 		handle('slinger-move-right', windowActions.moveAction(1, Axis.x));
 		handle('slinger-move-left', windowActions.moveAction(-1, Axis.x));
