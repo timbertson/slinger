@@ -10,7 +10,7 @@ interface MetaRect {
 }
 
 interface MetaDisplay {
-	get_x11_display(): MetaX11Display
+	get_current_monitor(): number
 	get_workspace_manager(): MetaWorkspaceManager
 	'focus-window': MetaWindow
 }
@@ -185,10 +185,10 @@ module GnomeSystem {
 	function listWindows(win?: MetaWindow): Array<MetaWindow> {
 		// XXX is this multi-monitor compatible?
 		const display = (win == null) ? global.display : win.get_display();
-		const screenNo = display.get_x11_display().get_screen_number();
+		const screenNo = display.get_current_monitor();
 		return display.get_workspace_manager().get_active_workspace().list_windows().filter(function(w: MetaWindow) {
 			return (
-				w.get_display().get_x11_display().get_screen_number() == screenNo
+				w.get_display().get_current_monitor() == screenNo
 				&& VISIBLE_WINDOW_TYPES.indexOf(w.get_window_type()) !== -1
 			);
 		});
