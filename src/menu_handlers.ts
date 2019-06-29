@@ -15,6 +15,7 @@ module MenuHandlers {
 	const ANGLE_QUARTER = ANGLE_HALF / 2;
 	const ANGLE_EIGHTH = ANGLE_QUARTER / 2;
 	const ANGLE_SIXTEENTH = ANGLE_EIGHTH / 2;
+	const ANGLE_TWELFTH = TAO / 12.0;
 
 	function circularIndex(sections: number, offset: number) {
 		const span = TAO / sections;
@@ -23,7 +24,6 @@ module MenuHandlers {
 		}
 	}
 
-	const innerIndex = circularIndex(2, 0);
 	const outerIndex = circularIndex(8, ANGLE_SIXTEENTH);
 
 	function floatColor(c: Color): Color {
@@ -45,8 +45,10 @@ module MenuHandlers {
 		private preview: Preview.LayoutPreview<any>;
 		private canvas: ClutterCanvas;
 		private Sys: System<any>;
+		private menu: Menu.Menu<any>;
 
-		constructor(Sys: System<any>, menuSize: Point, origin: Point, canvas: ClutterCanvas, preview: Preview.LayoutPreview<any>) {
+		constructor(menu: Menu.Menu<any>, Sys: System<any>, menuSize: Point, origin: Point, canvas: ClutterCanvas, preview: Preview.LayoutPreview<any>) {
+			this.menu = menu;
 			this.Sys = Sys;
 			this.currentMouseRelative = Point.ZERO;
 			this.origin = origin;
@@ -65,10 +67,12 @@ module MenuHandlers {
 			const CORNER_DISTANCE = floor(OUTER_RADIUS * 0.8);
 			const GLYPH_WIDTH = floor(OUTER_RADIUS * 0.09);
 			const GLYPH_THICKNESS = floor(OUTER_RADIUS * 0.03);
-			const DARK = floatColor({ r: 18, g: 36, b: 48, a: 200 });
+			const DARK_FOUR = floatColor({ r: 0, g: 77, b: 101, a: 200 });
+			const DARK_SIX = floatColor({ r: 128, g: 77, b: 0, a: 200 });
 			const LIGHT = floatColor({ r: 66, g: 79, b: 92, a: 237 });
 			const BG = { luminance: 0.7, alpha: 0.7 };
-			const ACTIVE = floatColor({ r: 45, g: 155, b: 203, a: 255 });
+			const ACTIVE_FOUR = floatColor({ r: 0, g: 155, b: 203, a: 255 });
+			const ACTIVE_SIX = floatColor({ r: 255, g: 155, b: 0, a: 255 });
 
 			this.selection = MenuSelection.None;
 
@@ -80,14 +84,26 @@ module MenuHandlers {
 			}
 
 			function activeColor(cr: CairoContext, selection: MenuSelection, ring: Ring, location: number) {
-				if (MenuSelection.eqTo(selection, ring, location)) {
-					setColor(cr, ACTIVE);
+				var active, dark;
+				let state = self.menu.getSplitState();
+				switch (state) {
+					case Menu.SplitMode.FOUR:
+						active = ACTIVE_FOUR;
+						dark = DARK_FOUR;
+						break;
+					case Menu.SplitMode.SIX:
+						active = ACTIVE_SIX;
+						dark = DARK_SIX;
+						break;
+				}
+				if (MenuSelection.eqTo(selection, ring, location, state)) {
+					setColor(cr, active);
 				} else {
-					setColor(cr, DARK);
+					setColor(cr, dark);
 				}
 			}
 
-			function activeColorInner(cr: CairoContext, selection: MenuSelection, location: InnerSelection) {
+			function activeColorInner(cr: CairoContext, selection: MenuSelection, location: Anchor) {
 				activeColor(cr, selection, Ring.INNER, location)
 			}
 
@@ -185,52 +201,86 @@ module MenuHandlers {
 				cr.fill();
 
 				// mid buttons:
+				cr.setLineWidth(MID_RADIUS - INNER_RADIUS - HALF_GAP_WIDTH);
 				cr.resetClip()
 				cr.rectangle(-HALF.x, -HALF.y, menuSize.x, menuSize.y);
-				cr.rectangle(HALF.x, - HALF_GAP_WIDTH, - menuSize.x, GAP_WIDTH);
-				cr.clip();
+				switch (self.menu.getSplitState()) {
+					case Menu.SplitMode.FOUR:
+						cr.rectangle(HALF.x, - HALF_GAP_WIDTH, - menuSize.x, GAP_WIDTH);
+						cr.clip();
 
-				cr.setLineWidth(MID_RADIUS - INNER_RADIUS - HALF_GAP_WIDTH);
-				cr.arc(0, 0, MID_RADIUS - ((MID_RADIUS - INNER_RADIUS) / 2) - HALF_GAP_WIDTH, 0, TAO);
-				setColor(cr, LIGHT);
-				cr.stroke();
+						cr.arc(0, 0, MID_RADIUS - ((MID_RADIUS - INNER_RADIUS) / 2) - HALF_GAP_WIDTH, PI, TAO);
+						activeColorInner(cr, selection, Anchor.TOP);
+						cr.stroke();
 
-				cr.arc(0, 0, MID_RADIUS - ((MID_RADIUS - INNER_RADIUS) / 2) - HALF_GAP_WIDTH, PI, TAO);
-				activeColorInner(cr, selection, InnerSelection.MAXIMIZE);
-				cr.stroke();
+						cr.arc(0, 0, MID_RADIUS - ((MID_RADIUS - INNER_RADIUS) / 2) - HALF_GAP_WIDTH, 0, PI);
+						activeColorInner(cr, selection, Anchor.BOTTOM);
+						cr.stroke();
 
-				cr.arc(0, 0, MID_RADIUS - ((MID_RADIUS - INNER_RADIUS) / 2) - HALF_GAP_WIDTH, 0, PI);
-				activeColorInner(cr, selection, InnerSelection.MINIMIZE);
-				cr.stroke();
+						const glyphOffset = MID_RADIUS - ((MID_RADIUS-INNER_RADIUS + GAP_WIDTH) / 2)
+						cr.rectangle(-(GLYPH_WIDTH / 2), -glyphOffset - (GLYPH_THICKNESS / 2), GLYPH_WIDTH, GLYPH_THICKNESS);
+						cr.rectangle(-(GLYPH_THICKNESS / 2), -glyphOffset - (GLYPH_WIDTH / 2), GLYPH_THICKNESS, GLYPH_WIDTH);
+						cr.rectangle(-(GLYPH_WIDTH / 2), glyphOffset - (GLYPH_THICKNESS / 2), GLYPH_WIDTH, GLYPH_THICKNESS);
+						setGrey(cr, BG);
+						cr.fill();
+						break;
+					case Menu.SplitMode.SIX:
+						cr.rotate(ANGLE_TWELFTH);
+						cr.rectangle(HALF.x, - HALF_GAP_WIDTH, - menuSize.x / 2, GAP_WIDTH);
+						cr.rotate(ANGLE_TWELFTH * 4.0);
+						cr.rectangle(HALF.x, - HALF_GAP_WIDTH, - menuSize.x / 2, GAP_WIDTH);
+						cr.rotate(ANGLE_TWELFTH * 4.0);
+						cr.rectangle(HALF.x, - HALF_GAP_WIDTH, - menuSize.x / 2, GAP_WIDTH);
+						cr.clip();
+						cr.rotate(ANGLE_TWELFTH * 3.0);
 
-				const glyphOffset = MID_RADIUS - ((MID_RADIUS-INNER_RADIUS + GAP_WIDTH)/2)
-				cr.rectangle(-(GLYPH_WIDTH/2), -glyphOffset - (GLYPH_THICKNESS/2), GLYPH_WIDTH, GLYPH_THICKNESS);
-				cr.rectangle(-(GLYPH_THICKNESS/2), -glyphOffset - (GLYPH_WIDTH/2), GLYPH_THICKNESS, GLYPH_WIDTH);
-				cr.rectangle(-(GLYPH_WIDTH/2), glyphOffset - (GLYPH_THICKNESS/2), GLYPH_WIDTH, GLYPH_THICKNESS);
-				setGrey(cr, BG);
-				cr.fill();
+						cr.arc(0, 0, MID_RADIUS - ((MID_RADIUS - INNER_RADIUS) / 2) - HALF_GAP_WIDTH, 1.0 * ANGLE_TWELFTH, 5.0 * ANGLE_TWELFTH);
+						activeColorInner(cr, selection, Anchor.BOTTOM);
+						cr.stroke();
+
+						cr.arc(0, 0, MID_RADIUS - ((MID_RADIUS - INNER_RADIUS) / 2) - HALF_GAP_WIDTH, 5.0 * ANGLE_TWELFTH, 9.0 * ANGLE_TWELFTH);
+						activeColorInner(cr, selection, Anchor.LEFT);
+						cr.stroke();
+
+						cr.arc(0, 0, MID_RADIUS - ((MID_RADIUS - INNER_RADIUS) / 2) - HALF_GAP_WIDTH, 9.0 * ANGLE_TWELFTH, 1.0 * ANGLE_TWELFTH);
+						activeColorInner(cr, selection, Anchor.RIGHT);
+						cr.stroke();
+						break;
+				}
 
 				cr.restore();
 				return Sys.Clutter.EVENT_STOP;
 			}
 		}
 
-		onMouseMove(mode: MouseMode, eventPoint: Point): ClutterEventResponse {
-			const point = this.currentMouseRelative = Point.subtract(eventPoint, this.origin);
-			if (mode === MouseMode.MENU) {
-				const { x, y } = point;
-				const radius = Math.sqrt(Math.pow(x,2) + Math.pow(y,2));
-				const angle = Math.atan2(y, x);
-				// log("radius = " + radius);
-				// log("angle = " + angle);
-
-				if (radius <= this.INNER_RADIUS) {
-					this.updateSelection(MenuSelection.None);
-				} else if (radius < this.MID_RADIUS) {
-					this.updateSelection(MenuSelection.Inner(innerIndex(angle)));
+		updateMouseSelection() {
+			const { x, y } = this.currentMouseRelative;
+			const radius = Math.sqrt(Math.pow(x,2) + Math.pow(y,2));
+			const angle = Math.atan2(y, x);
+			// log("radius = " + radius);
+			// log("angle = " + angle);a
+			let state = this.menu.getSplitState();
+			if (radius <= this.INNER_RADIUS) {
+				this.updateSelection(MenuSelection.None);
+			} else if (radius < this.MID_RADIUS) {
+				var index;
+				if (state == Menu.SplitMode.FOUR) {
+					let slice = circularIndex(2, 0)(angle);
+					index = [Anchor.TOP, Anchor.BOTTOM][slice];
 				} else {
-					this.updateSelection(MenuSelection.Outer(outerIndex(angle)));
+					let slice = circularIndex(3, ANGLE_TWELFTH)(angle);
+					index = [Anchor.LEFT, Anchor.RIGHT, Anchor.BOTTOM][slice];
 				}
+				this.updateSelection(MenuSelection.Inner(index, state));
+			} else {
+				this.updateSelection(MenuSelection.Outer(outerIndex(angle), state));
+			}
+		}
+
+		onMouseMove(mode: MouseMode, eventPoint: Point): ClutterEventResponse {
+			this.currentMouseRelative = Point.subtract(eventPoint, this.origin);
+			if (mode === MouseMode.MENU) {
+				this.updateMouseSelection();
 			}
 			this.preview.onMouseMove(mode, eventPoint);
 			return this.Sys.Clutter.EVENT_STOP;
@@ -250,52 +300,86 @@ module MenuHandlers {
 		}
 
 		applyDirection(direction: Direction) {
+			const currentLocation = this.selection.index as Anchor;
+			const state = this.menu.getSplitState();
 			switch (this.selection.ring) {
 				case Ring.NONE:
 					switch (direction) {
-						case Direction.UP: this.updateSelection(MenuSelection.Outer(Anchor.TOP)); break;
-						case Direction.DOWN: this.updateSelection(MenuSelection.Outer(Anchor.BOTTOM)); break;
-						case Direction.LEFT: this.updateSelection(MenuSelection.Outer(Anchor.LEFT)); break;
-						case Direction.RIGHT: this.updateSelection(MenuSelection.Outer(Anchor.RIGHT)); break;
+						case Direction.UP: this.updateSelection(MenuSelection.Outer(Anchor.TOP, state)); break;
+						case Direction.DOWN: this.updateSelection(MenuSelection.Outer(Anchor.BOTTOM, state)); break;
+						case Direction.LEFT: this.updateSelection(MenuSelection.Outer(Anchor.LEFT, state)); break;
+						case Direction.RIGHT: this.updateSelection(MenuSelection.Outer(Anchor.RIGHT, state)); break;
 					}
 				break;
 
 				case Ring.INNER:
-					// noop
+					if (state == Menu.SplitMode.SIX) {
+						switch (direction) {
+							case Direction.LEFT:
+								switch (currentLocation) {
+									case Anchor.RIGHT: this.updateSelection(MenuSelection.Inner(Anchor.BOTTOM, state)); break;
+									case Anchor.BOTTOM: this.updateSelection(MenuSelection.Inner(Anchor.LEFT, state)); break;
+									case Anchor.LEFT: this.updateSelection(MenuSelection.Outer(Anchor.LEFT, state)); break;
+								}
+								break;
+							case Direction.RIGHT:
+								switch (currentLocation) {
+									case Anchor.LEFT: this.updateSelection(MenuSelection.Inner(Anchor.BOTTOM, state)); break;
+									case Anchor.BOTTOM: this.updateSelection(MenuSelection.Inner(Anchor.RIGHT, state)); break;
+									case Anchor.RIGHT: this.updateSelection(MenuSelection.Outer(Anchor.RIGHT, state)); break;
+								}
+								break;
+							case Direction.UP: this.updateSelection(MenuSelection.Outer(Anchor.TOP, state)); break;
+							case Direction.DOWN: this.updateSelection(MenuSelection.Outer(Anchor.BOTTOM, state)); break;
+						}
+					}
 				break;
 
 				case Ring.OUTER:
-					const currentLocation = this.selection.index as Anchor;
 					switch (direction) {
 						case Direction.UP:
 							switch (currentLocation) {
-								case Anchor.LEFT: this.updateSelection(MenuSelection.Outer(Anchor.TOPLEFT)); break;
-								case Anchor.RIGHT: this.updateSelection(MenuSelection.Outer(Anchor.TOPRIGHT)); break;
-								default: this.updateSelection(MenuSelection.Outer(Anchor.TOP)); break;
+								case Anchor.BOTTOMLEFT: this.updateSelection(MenuSelection.Outer(Anchor.LEFT, state)); break;
+								case Anchor.LEFT: this.updateSelection(MenuSelection.Outer(Anchor.TOPLEFT, state)); break;
+								case Anchor.BOTTOMRIGHT: this.updateSelection(MenuSelection.Outer(Anchor.RIGHT, state)); break;
+								case Anchor.RIGHT: this.updateSelection(MenuSelection.Outer(Anchor.TOPRIGHT, state)); break;
+								default: this.updateSelection(MenuSelection.Outer(Anchor.TOP, state)); break;
 							}
 						break;
 
 						case Direction.DOWN:
 							switch (currentLocation) {
-								case Anchor.LEFT: this.updateSelection(MenuSelection.Outer(Anchor.BOTTOMLEFT)); break;
-								case Anchor.RIGHT: this.updateSelection(MenuSelection.Outer(Anchor.BOTTOMRIGHT)); break;
-								default: this.updateSelection(MenuSelection.Outer(Anchor.BOTTOM)); break;
+								case Anchor.TOPLEFT: this.updateSelection(MenuSelection.Outer(Anchor.LEFT, state)); break;
+								case Anchor.LEFT: this.updateSelection(MenuSelection.Outer(Anchor.BOTTOMLEFT, state)); break;
+								case Anchor.TOPRIGHT: this.updateSelection(MenuSelection.Outer(Anchor.RIGHT, state)); break;
+								case Anchor.RIGHT: this.updateSelection(MenuSelection.Outer(Anchor.BOTTOMRIGHT, state)); break;
+								default: this.updateSelection(MenuSelection.Outer(Anchor.BOTTOM, state)); break;
 							}
 						break;
 
 						case Direction.LEFT:
 							switch (currentLocation) {
-								case Anchor.TOP: this.updateSelection(MenuSelection.Outer(Anchor.TOPLEFT)); break;
-								case Anchor.BOTTOM: this.updateSelection(MenuSelection.Outer(Anchor.BOTTOMLEFT)); break;
-								default: this.updateSelection(MenuSelection.Outer(Anchor.LEFT)); break;
+								case Anchor.TOP: this.updateSelection(MenuSelection.Outer(Anchor.TOPLEFT, state)); break;
+								case Anchor.BOTTOM: this.updateSelection(MenuSelection.Outer(Anchor.BOTTOMLEFT, state)); break;
+								case Anchor.RIGHT:
+									if (state == Menu.SplitMode.SIX) {
+										this.updateSelection(MenuSelection.Inner(Anchor.RIGHT, state));
+										break;
+									}
+								default: this.updateSelection(MenuSelection.Outer(Anchor.LEFT, state)); break;
 							}
 						break;
 
 						case Direction.RIGHT:
 							switch (currentLocation) {
-								case Anchor.TOP: this.updateSelection(MenuSelection.Outer(Anchor.TOPRIGHT)); break;
-								case Anchor.BOTTOM: this.updateSelection(MenuSelection.Outer(Anchor.BOTTOMRIGHT)); break;
-								default: this.updateSelection(MenuSelection.Outer(Anchor.RIGHT)); break;
+								case Anchor.TOP: this.updateSelection(MenuSelection.Outer(Anchor.TOPRIGHT, state)); break;
+								case Anchor.BOTTOM: this.updateSelection(MenuSelection.Outer(Anchor.BOTTOMRIGHT, state)); break;
+								case Anchor.LEFT:
+									if (state == Menu.SplitMode.SIX) {
+										this.updateSelection(MenuSelection.Inner(Anchor.LEFT, state));
+										break;
+									}
+								default: this.updateSelection(MenuSelection.Outer(Anchor.RIGHT, state)); break;
 							}
 						break;
 					}

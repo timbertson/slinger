@@ -39,6 +39,7 @@ module Menu {
 		TAB = 23,
 		U = 30,
 		I = 31,
+		A = 38,
 		H = 43,
 		J = 44,
 		K = 45,
@@ -50,6 +51,11 @@ module Menu {
 		MINUS = 20,
 		EQUAL = 21,
 		RETURN = 36,
+	}
+
+	export const enum SplitMode {
+		FOUR,
+		SIX
 	}
 
 	function modeForKey(key: KeyCode): MouseMode {
@@ -74,7 +80,7 @@ module Menu {
 	function selectionForKey(key: KeyCode): MenuSelection {
 		switch(key) {
 			case KeyCode.EQUAL:
-				return MenuSelection.Inner(InnerSelection.MAXIMIZE);
+				return MenuSelection.Inner(Anchor.TOP, SplitMode.FOUR);
 
 			default: return null;
 		}
@@ -82,6 +88,7 @@ module Menu {
 
 	export class Menu<WindowType> {
 		ui: Actor;
+		private canvas: ClutterCanvas;
 		private parent: Actor;
 		private preview: Preview.LayoutPreview<WindowType>;
 		private menuHandlers: MenuHandlers.Handlers;
@@ -89,6 +96,7 @@ module Menu {
 		private mouseMode: MouseMode;
 		private Sys: System<WindowType>;
 		private win: WindowType;
+		private split: SplitMode;
 
 		static show<WindowType>(Sys: System<WindowType>,
 				parent: Actor,
@@ -127,15 +135,17 @@ module Menu {
 			const menuSize: Point = { x: 200, y: 200 };
 			menu.set_size(menuSize.x, menuSize.y);
 
-			const canvas = Sys.newClutterCanvas();
+			const canvas = this.canvas  = Sys.newClutterCanvas();
 			canvas.set_size(menuSize.x, menuSize.y);
 			menu.set_content(canvas);
 
 			const position: Point = Point.subtract(origin, Point.scaleConstant(0.5, menuSize));
 			menu.set_position(position.x, position.y);
 
-			const preview = this.preview = new Preview.LayoutPreview(Sys, screen, windowRect, win);
-			const handlers = this.menuHandlers = new MenuHandlers.Handlers(Sys, menuSize, origin, canvas, preview);
+			this.split = SplitMode.FOUR;
+
+			const preview = this.preview = new Preview.LayoutPreview(self, Sys, screen, windowRect, win);
+			const handlers = this.menuHandlers = new MenuHandlers.Handlers(self, Sys, menuSize, origin, canvas, preview);
 			canvas.connect('draw', handlers.draw);
 			backgroundActor.connect('motion-event', function(_actor: Actor, event: ClutterMouseEvent) {
 				let position = Sys.translateEventCoordinates(Point.ofEvent(event), win);
@@ -179,6 +189,10 @@ module Menu {
 			canvas.invalidate();
 		}
 
+		getSplitState() {
+			return this.split;
+		}
+
 		onKeyPress(event: ClutterKeyEvent) {
 			const code: number = event.get_key_code();
 			// p('keypress: ' + code);
@@ -186,6 +200,14 @@ module Menu {
 				this.complete(false);
 			} else if (code == KeyCode.RETURN) {
 				this.complete(true);
+			} else if (code == KeyCode.A) {
+				if (this.split == SplitMode.FOUR) {
+					this.split = SplitMode.SIX;
+				} else {
+					this.split = SplitMode.FOUR;
+				}
+				this.canvas.invalidate();
+				this.menuHandlers.updateMouseSelection();
 			} else {
 				const newMode = modeForKey(code);
 				if (newMode !== null) {
@@ -275,7 +297,7 @@ module Menu {
 				this.onSelect(Action.CANCEL, null);
 			} else {
 				const selection = this.menuHandlers.getSelection();
-				if (MenuSelection.eqTo(selection, Ring.INNER, InnerSelection.MINIMIZE)) {
+				if (MenuSelection.eqTo(selection, Ring.INNER, Anchor.BOTTOM, SplitMode.FOUR)) {
 					this.onSelect(Action.MINIMIZE, null);
 				} else {
 					const rect = this.preview.getRect()

@@ -8,6 +8,9 @@ module Preview {
 	const MANIPULATION_SCALE = 2.2;
 	const MINIMUM_SIZE = 20;
 
+    const ONE_THIRD = 1.0 / 3.0;
+    const TWO_THIRD = 2.0 / 3.0;
+
 	export function oppose(loc: Anchor): Anchor {
 		return (loc + 4) % 8; // Magic!
 	}
@@ -21,14 +24,17 @@ module Preview {
 		private windowRect: Rect;
 		private win: WindowType;
 		private windowHidden: boolean;
+		private menu: Menu.Menu<any>;
 		ui: Actor
 		resizeCorner: Anchor;
 		trackingOrigin: Point;
 
-		constructor(Sys: System<WindowType>,
+		constructor(menu: Menu.Menu<any>,
+				Sys: System<WindowType>,
 				size: Point, windowRect: Rect,
 				win: WindowType)
 		{
+			this.menu = menu;
 			this.Sys = Sys;
 			this.size = size;
 			this.ui = Sys.newClutterActor();
@@ -48,62 +54,130 @@ module Preview {
 
 		private selectOuter(loc: Anchor): Rect {
 			const size = this.size;
-			switch (loc) {
-				case Anchor.LEFT:
-					return {
-						pos: Point.ZERO,
-						size: Point.scale({ x: 0.5, y: 1 }, size),
-					}
-				case Anchor.TOPLEFT:
-					return {
-						pos: Point.ZERO,
-						size: Point.scaleConstant(0.5, size),
-					}
-				case Anchor.TOP:
-					return {
-						pos: Point.ZERO,
-						size: Point.scale({ x: 1, y: 0.5 }, size),
-					}
-				case Anchor.TOPRIGHT:
-					return {
-						pos: Point.scale({ x: 0.5, y: 0 }, size),
-						size: Point.scaleConstant(0.5, size),
-					}
-				case Anchor.RIGHT:
-					return {
-						pos: Point.scale({ x: 0.5, y: 0 }, size),
-						size: Point.scale({ x: 0.5, y: 1 }, size),
-					}
-				case Anchor.BOTTOMRIGHT:
-					return {
-						pos: Point.scaleConstant(0.5, size),
-						size: Point.scaleConstant(0.5, size),
-					}
-				case Anchor.BOTTOM:
-					return {
-						pos: Point.scale({ x: 0, y: 0.5 }, size),
-						size: Point.scale({ x: 1, y: 0.5 }, size),
-					}
-				case Anchor.BOTTOMLEFT:
-					return {
-						pos: Point.scale({ x: 0, y: 0.5}, size),
-						size: Point.scaleConstant(0.5, size),
-					}
+			switch (this.menu.getSplitState()) {
+				case Menu.SplitMode.FOUR:
+					switch (loc) {
+					case Anchor.LEFT:
+						return {
+							pos: Point.ZERO,
+							size: Point.scale({ x: 0.5, y: 1 }, size),
+						}
+					case Anchor.TOPLEFT:
+						return {
+							pos: Point.ZERO,
+							size: Point.scaleConstant(0.5, size),
+						}
+					case Anchor.TOP:
+						return {
+							pos: Point.ZERO,
+							size: Point.scale({ x: 1, y: 0.5 }, size),
+						}
+					case Anchor.TOPRIGHT:
+						return {
+							pos: Point.scale({ x: 0.5, y: 0 }, size),
+							size: Point.scaleConstant(0.5, size),
+						}
+					case Anchor.RIGHT:
+						return {
+							pos: Point.scale({ x: 0.5, y: 0 }, size),
+							size: Point.scale({ x: 0.5, y: 1 }, size),
+						}
+					case Anchor.BOTTOMRIGHT:
+						return {
+							pos: Point.scaleConstant(0.5, size),
+							size: Point.scaleConstant(0.5, size),
+						}
+					case Anchor.BOTTOM:
+						return {
+							pos: Point.scale({ x: 0, y: 0.5 }, size),
+							size: Point.scale({ x: 1, y: 0.5 }, size),
+						}
+					case Anchor.BOTTOMLEFT:
+						return {
+							pos: Point.scale({ x: 0, y: 0.5}, size),
+							size: Point.scaleConstant(0.5, size),
+						}
+				}
+			case Menu.SplitMode.SIX:
+				switch (loc) {
+					case Anchor.LEFT:
+						return {
+							pos: Point.ZERO,
+							size: Point.scale({ x: ONE_THIRD, y: 1 }, size),
+						}
+					case Anchor.TOPLEFT:
+						return {
+							pos: Point.ZERO,
+							size: Point.scale({ x: ONE_THIRD, y: 0.5 }, size),
+						}
+					case Anchor.TOP:
+						return {
+							pos: Point.scale({ x: ONE_THIRD, y: 0 }, size),
+							size: Point.scale({ x: ONE_THIRD, y: 0.5 }, size),
+						}
+					case Anchor.TOPRIGHT:
+						return {
+							pos: Point.scale({ x: TWO_THIRD, y: 0 }, size),
+							size: Point.scale({ x: ONE_THIRD, y: 0.5 }, size),
+						}
+					case Anchor.RIGHT:
+						return {
+							pos: Point.scale({ x: TWO_THIRD, y: 0 }, size),
+							size: Point.scale({ x: ONE_THIRD, y: 1 }, size),
+						}
+					case Anchor.BOTTOMRIGHT:
+						return {
+							pos: Point.scale({ x: TWO_THIRD, y: 0.5 }, size),
+							size: Point.scale({ x: ONE_THIRD, y: 0.5 }, size),
+						}
+					case Anchor.BOTTOM:
+						return {
+							pos: Point.scale({ x: ONE_THIRD, y: 0.5 }, size),
+							size: Point.scale({ x: ONE_THIRD, y: 0.5 }, size),
+						}
+					case Anchor.BOTTOMLEFT:
+						return {
+							pos: Point.scale({ x: 0, y: 0.5 }, size),
+							size: Point.scale({ x: ONE_THIRD, y: 0.5 }, size),
+						}
+				}
 			}
 			return null;
 		}
 
-		private selectInner(sel: InnerSelection): Rect {
-			switch (sel) {
-				case InnerSelection.MAXIMIZE:
-					return {
-						pos: Point.ZERO,
-						size: this.size,
+		private selectInner(sel: Anchor): Rect {
+			switch (this.menu.getSplitState()) {
+				case Menu.SplitMode.FOUR:
+					switch (sel) {
+						case Anchor.TOP:
+							return {
+								pos: Point.ZERO,
+								size: this.size,
+							}
+						case Anchor.BOTTOM:
+						default:
+							return null;
 					}
-
-				case InnerSelection.MINIMIZE:
-				default:
-					return null;
+				case Menu.SplitMode.SIX:
+					switch (sel) {
+						case Anchor.LEFT:
+							return {
+								pos: Point.ZERO,
+								size: Point.scale({ x: TWO_THIRD, y: 1 }, this.size),
+							}
+						case Anchor.RIGHT:
+							return {
+								pos: Point.scale({ x: ONE_THIRD, y: 0 }, this.size),
+								size: Point.scale({ x: TWO_THIRD, y: 1 }, this.size),
+							}
+						case Anchor.BOTTOM:
+							return {
+								pos: Point.scale({ x: ONE_THIRD, y: 0 }, this.size),
+								size: Point.scale({ x: ONE_THIRD, y: 1 }, this.size),
+							}
+						default:
+							return null;
+					}
 			}
 		}
 
