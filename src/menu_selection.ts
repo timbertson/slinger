@@ -1,7 +1,4 @@
-const enum InnerSelection {
-	MAXIMIZE = 0,
-	MINIMIZE
-}
+/// <reference path="menu.ts" />
 
 const enum Ring {
 	NONE = 0,
@@ -12,22 +9,23 @@ const enum Ring {
 interface MenuSelection {
 	ring: Ring
 	index: number
+	mode: Menu.SplitMode
 }
 
 module MenuSelection {
-	export const None: MenuSelection = { ring: Ring.NONE, index: 0 }
+	export const None: MenuSelection = { ring: Ring.NONE, index: 0, mode: Menu.SplitMode.FOUR }
 
 	export function eq(a: MenuSelection, b: MenuSelection) {
-		return a.ring == b.ring && a.index == b.index;
+		return a.ring == b.ring && a.index == b.index && a.mode == b.mode;
 	}
-	export function eqTo(a: MenuSelection, ring: Ring, location: number) {
-		return a.ring == ring && a.index == location;
+	export function eqTo(a: MenuSelection, ring: Ring, location: number, mode: Menu.SplitMode) {
+		return a.ring == ring && a.index == location && a.mode == mode;
 	}
 
-	export function Inner(sel: InnerSelection): MenuSelection {
-		return { ring: Ring.INNER, index: sel };
+	export function Inner(sel: Anchor, mode: Menu.SplitMode): MenuSelection {
+		return { ring: Ring.INNER, index: sel, mode: mode };
 	}
-	export function Outer(sel: Anchor): MenuSelection {
-		return { ring: Ring.OUTER, index: sel };
+	export function Outer(sel: Anchor, mode: Menu.SplitMode): MenuSelection {
+		return { ring: Ring.OUTER, index: sel, mode: mode };
 	}
 }
