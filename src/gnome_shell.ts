@@ -183,12 +183,12 @@ module GnomeSystem {
 	];
 
 	function listWindows(win?: MetaWindow): Array<MetaWindow> {
-		// XXX is this multi-monitor compatible?
 		const display = (win == null) ? global.display : win.get_display();
-		const screenNo = display.get_current_monitor();
-		return display.get_workspace_manager().get_active_workspace().list_windows().filter(function(w: MetaWindow) {
+		const screenNo = (win == null) ? display.get_current_monitor() : win.get_monitor();
+		let windows = display.get_workspace_manager().get_active_workspace().list_windows();
+		return windows.filter(function(w: MetaWindow) {
 			return (
-				w.get_display().get_current_monitor() == screenNo
+				w.get_monitor() == screenNo
 				&& VISIBLE_WINDOW_TYPES.indexOf(w.get_window_type()) !== -1
 			);
 		});
