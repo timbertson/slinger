@@ -1,37 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-	<schema id="org.gnome.shell.extensions.net.gfxmonk.slinger.keybindings" path="/org/gnome/shell/extensions/net/gfxmonk/slinger/keybindings/">
-		<key type="as" name="slinger-show">                        <default>["&lt;Mod4&gt;a"]</default><summary>Show the slinger UI</summary><description></description></key>
+	<schema id="org.gnome.shell.extensions.net.gfxmonk.slinger.keybindings" 
+			path="/org/gnome/shell/extensions/net/gfxmonk/slinger/keybindings/">
+	
+		<!-- See reference at: https://gitlab.gnome.org/GNOME/gtk/raw/master/gdk/gdkkeysyms.h --> 
+		
+		<key type="as" name="slinger-show">                        <default>["&lt;Mod4&gt;w"]</default><summary>Show arrange window menu</summary><description></description></key>
+		<key type="as" name="slinger-distribute">                  <default>["&lt;Mod4&gt;g"]</default><summary>Distribute/tile/splat windows side by side</summary><description>Distribute windows.</description></key>
+		<key type="as" name="slinger-fill-available-space">        <default>["&lt;Mod4&gt;f"]</default><summary>Fill available space with window</summary><description>Fill available space.</description></key>
 
-		<key type="as" name="slinger-next-window">                 <default>["&lt;Mod4&gt;j", "&lt;Mod4&gt;Tab"]</default><summary>Change focus to the next window</summary><description>Change focus to the next window.</description></key>
-		<key type="as" name="slinger-prev-window">                 <default>["&lt;Mod4&gt;k", "&lt;Mod4&gt;&lt;Shift&gt;Tab"]</default><summary>Change focus to the previous window</summary><description>Change focus to the previous window.</description></key>
+		<key type="as" name="slinger-swap-next-window">            <default>["&lt;Mod4&gt;&lt;Alt&gt;Right","&lt;Mod4&gt;&lt;Alt&gt;KP_Right"]</default><summary>Swap with next window</summary><description>Swap with next window.</description></key>
+		<key type="as" name="slinger-swap-prev-window">            <default>["&lt;Mod4&gt;&lt;Alt&gt;Left","&lt;Mod4&gt;&lt;Alt&gt;KP_Left"]</default><summary>Swap with previous window</summary><description>Swap with prev window.</description></key>
+		<key type="as" name="slinger-swap-largest-window">         <default>["&lt;Mod4&gt;&lt;Alt&gt;Up","&lt;Mod4&gt;&lt;Alt&gt;KP_Up"]</default><summary>Swap with largest window</summary><description>Swap with largest window.</description></key>
 
-		<key type="as" name="slinger-swap-next-window">            <default>["&lt;Mod4&gt;&lt;Shift&gt;j"]</default><summary>Swap with next window</summary><description>Swap with next window.</description></key>
-		<key type="as" name="slinger-swap-prev-window">            <default>["&lt;Mod4&gt;&lt;Shift&gt;k"]</default><summary>Swap with prev window</summary><description>Swap with prev window.</description></key>
-		<key type="as" name="slinger-swap-largest-window">         <default>["&lt;Mod4&gt;&lt;Shift&gt;space"]</default><summary>Swap with prev window</summary><description>Swap with prev window.</description></key>
+		<key type="as" name="slinger-move-right">                  <default>["&lt;Mod4&gt;&lt;Control&gt;Right","&lt;Mod4&gt;&lt;Control&gt;KP_Right"]</default><summary>Grow master area</summary><description>Grow master area.</description></key>
+		<key type="as" name="slinger-move-left">                   <default>["&lt;Mod4&gt;&lt;Control&gt;Left","&lt;Mod4&gt;&lt;Control&gt;KP_Left"]</default><summary>Shrink master area</summary><description>Shrink master area.</description></key>
+		<key type="as" name="slinger-move-up">                     <default>["&lt;Mod4&gt;&lt;Control&gt;Up","&lt;Mod4&gt;&lt;Control&gt;KP_Up"]</default><summary>grow a slave area</summary><description>grow a slave area.</description></key>
+		<key type="as" name="slinger-move-down">                   <default>["&lt;Mod4&gt;&lt;Control&gt;Down","&lt;Mod4&gt;&lt;Control&gt;KP_Down"]</default><summary>Shrink a slave area</summary><description>Shrink a slave area.</description></key>
 
-		<key type="as" name="slinger-move-right">                  <default>["&lt;Mod4&gt;l"]</default><summary>Grow master area</summary><description>Grow master area.</description></key>
-		<key type="as" name="slinger-move-left">                   <default>["&lt;Mod4&gt;h"]</default><summary>Shrink master area</summary><description>Shrink master area.</description></key>
-		<key type="as" name="slinger-move-up">                     <default>["&lt;Mod4&gt;i"]</default><summary>grow a slave area</summary><description>grow a slave area.</description></key>
-		<key type="as" name="slinger-move-down">                   <default>["&lt;Mod4&gt;u"]</default><summary>Shrink a slave area</summary><description>Shrink a slave area.</description></key>
+		<key type="as" name="slinger-grow-horizontal">             <default>["&lt;Mod4&gt;&lt;Alt&gt;Plus","&lt;Mod4&gt;&lt;Alt&gt;KP_Add"]</default><summary>Increase window's width</summary><description>Increase window's width.</description></key>
+		<key type="as" name="slinger-shrink-horizontal">           <default>["&lt;Mod4&gt;&lt;Alt&gt;Minus","&lt;Mod4&gt;&lt;Alt&gt;KP_Subtract"]</default><summary>Decrease window's width</summary><description>Decrease window's width.</description></key>
+		<key type="as" name="slinger-grow-vertical">               <default>["&lt;Mod4&gt;&lt;Alt&gt;Asterisk","&lt;Mod4&gt;&lt;Alt&gt;KP_Multiply"]</default><summary>Increase window's height</summary><description>Increase window's height.</description></key>
+		<key type="as" name="slinger-shrink-vertical">             <default>["&lt;Mod4&gt;&lt;Alt&gt;Slash","&lt;Mod4&gt;&lt;Alt&gt;KP_Divide"]</default><summary>Decrease window's height</summary><description>Decrease window's height.</description></key>
+		<key type="as" name="slinger-grow">                        <default>["&lt;Mod4&gt;Plus","&lt;Mod4&gt;KP_Add"]</default><summary>Increase window's size</summary><description>Increase window's size.</description></key>
+		<key type="as" name="slinger-shrink">                      <default>["&lt;Mod4&gt;Minus","&lt;Mod4&gt;KP_Subtract"]</default><summary>Decrease window's size</summary><description>Decrease window's size.</description></key>
 
-		<key type="as" name="slinger-grow-horizontal">             <default>["&lt;Mod4&gt;&lt;Shift&gt;l"]</default><summary>Increase window's width</summary><description>Increase window's width.</description></key>
-		<key type="as" name="slinger-shrink-horizontal">           <default>["&lt;Mod4&gt;&lt;Shift&gt;h"]</default><summary>Decrease window's width</summary><description>Decrease window's width.</description></key>
-		<key type="as" name="slinger-grow-vertical">               <default>["&lt;Mod4&gt;&lt;Shift&gt;u"]</default><summary>Increase window's height</summary><description>Increase window's height.</description></key>
-		<key type="as" name="slinger-shrink-vertical">             <default>["&lt;Mod4&gt;&lt;Shift&gt;i"]</default><summary>Decrease window's height</summary><description>Decrease window's height.</description></key>
-		<key type="as" name="slinger-grow">                        <default>["&lt;Mod4&gt;equal"]</default><summary>Increase window's size</summary><description>Increase window's size.</description></key>
-		<key type="as" name="slinger-shrink">                      <default>["&lt;Mod4&gt;minus"]</default><summary>Decrease window's size</summary><description>Decrease window's size.</description></key>
+		<key type="as" name="slinger-toggle-maximize">             <default>["&lt;Mod4&gt;&lt;Alt&gt;h"]</default><summary>Toggle window maximized state</summary><description>Toggle window maximized state.</description></key>
+		<key type="as" name="slinger-unminimize-window">           <default>["&lt;Mod4&gt;&lt;Shift&gt;h"]</default><summary>Un-minimize last window</summary><description>Un-minimize last window.</description></key>
+
+		<!-- DEPRECATED: confliting or duplicated shortcuts with gnome  -->
+		
+		<key type="as" name="slinger-minimize-window">             <default>["&lt;Mod4&gt;&lt;Alt&gt;&lt;Shift&gt;x"]</default><summary>Minimize window</summary><description>Minimize window.</description></key>
+		<key type="as" name="slinger-next-window">                 <default>["&lt;Mod4&gt;&lt;Alt&gt;Tab"]</default><summary>Change focus to the next window</summary><description>Change focus to the next window.</description></key>
+		<key type="as" name="slinger-prev-window">                 <default>["&lt;Mod4&gt;&lt;Shift&gt;&lt;Alt&gt;Tab"]</default><summary>Change focus to the previous window</summary><description>Change focus to the previous window.</description></key>
 
 		<key type="as" name="slinger-switch-workspace-up">         <default>["&lt;Mod4&gt;&lt;Alt&gt;k"]</default><summary>Go to workspace above</summary><description>Go to workspace above.</description></key>
 		<key type="as" name="slinger-switch-workspace-down">       <default>["&lt;Mod4&gt;&lt;Alt&gt;j"]</default><summary>Go to workspace below</summary><description>Go to workspace below.</description></key>
 		<key type="as" name="slinger-move-window-workspace-up">    <default>["&lt;Mod4&gt;&lt;Alt&gt;&lt;Shift&gt;k"]</default><summary>Move window to workspace above</summary><description>Move window to workspace above.</description></key>
 		<key type="as" name="slinger-move-window-workspace-down">  <default>["&lt;Mod4&gt;&lt;Alt&gt;&lt;Shift&gt;j"]</default><summary>Move window to workspace below</summary><description>Move window to workspace below.</description></key>
-
-		<key type="as" name="slinger-toggle-maximize">             <default>["&lt;Mod4&gt;z"]</default><summary>Toggle window maximized state</summary><description>Toggle window maximized state.</description></key>
-		<key type="as" name="slinger-minimize-window">             <default>["&lt;Mod4&gt;x"]</default><summary>Minimize window</summary><description>Minimize window.</description></key>
-		<key type="as" name="slinger-unminimize-window">           <default>["&lt;Mod4&gt;&lt;Shift&gt;x"]</default><summary>Un-minimize last window</summary><description>Un-minimize last window.</description></key>
-
-		<key type="as" name="slinger-distribute">                  <default>["&lt;Mod4&gt;&lt;Shift&gt;8"]</default><summary>Distribute windows</summary><description>Distribute windows.</description></key>
-		<key type="as" name="slinger-fill-available-space">        <default>["&lt;Mod4&gt;8"]</default><summary>Fill available space</summary><description>Fill available space.</description></key>
+		
 	</schema>
 </schemalist>
