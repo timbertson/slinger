@@ -109,6 +109,8 @@ module Menu {
 		private Sys: System<WindowType>;
 		private win: WindowType;
 		private splitMode: SplitMode;
+		private _pointerDevice: ClutterInputDevice;
+		private _keyboardDevice: ClutterInputDevice;
 
 		static show<WindowType>(Sys: System<WindowType>,
 				parent: Actor,
@@ -165,8 +167,12 @@ module Menu {
 				return Sys.Clutter.EVENT_STOP;
 			});
 
-			Sys.Clutter.grab_pointer(backgroundActor);
-			Sys.Clutter.grab_keyboard(backgroundActor);
+			let dm = Clutter.DeviceManager.get_default();
+			this._pointerDevice = dm.get_core_device(Clutter.InputDeviceType.POINTER_DEVICE);
+			this._keyboardDevice = dm.get_core_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
++
+			this._pointerDevice.grab(backgroundActor);
+			this._keyboardDevice.grab(backgroundActor);
 
 			// var suspendedMouseMode = MouseMode.NOOP;
 			backgroundActor.connect('key-press-event', function(_actor: Actor, event: ClutterKeyEvent) {
@@ -292,8 +298,8 @@ module Menu {
 		destroy() {
 			p("hiding menu")
 			if (this.displayed()) {
-				this.Sys.Clutter.ungrab_pointer();
-				this.Sys.Clutter.ungrab_keyboard();
+				this._pointerDevice.ungrab();
+				this._keyboardDevice.ungrab();
 				this.parent.remove_child(this.ui);
 				this.parent = null;
 			}

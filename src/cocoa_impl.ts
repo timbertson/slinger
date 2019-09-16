@@ -43,10 +43,6 @@ module Wrapper {
 			let get = makeGetters(obj);
 			return {
 				EVENT_STOP: ((get.prop('EVENT_STOP') as any) as ClutterEventResponse),
-				grab_pointer: get.fn('grab_pointer'),
-				grab_keyboard: get.fn('grab_keyboard'),
-				ungrab_pointer: get.fn('ungrab_pointer'),
-				ungrab_keyboard: get.fn('ungrab_keyboard'),
 				ModifierType: {
 					SHIFT_MASK: (get.prop('SHIFT_MASK') as number),
 				}

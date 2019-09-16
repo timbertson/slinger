@@ -32,10 +32,6 @@ type Actor = Connectable & {
 };
 interface ClutterModule {
 	EVENT_STOP: ClutterEventResponse
-	grab_pointer(actor: Actor): void
-	ungrab_pointer(): void
-	grab_keyboard(actor: Actor): void
-	ungrab_keyboard(): void
 	ModifierType: {
 		SHIFT_MASK: number
 	}
@@ -45,6 +41,10 @@ interface Connectable {
 	connect(signal: String, handler: Function): void
 }
 
+interface ClutterInputDevice {
+        grab(actor: Actor): void
+        ungrab(): void
+};
 interface ClutterMouseEvent {
 	get_coords(): Array<number>
 };
