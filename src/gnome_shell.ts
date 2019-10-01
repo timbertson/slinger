@@ -71,9 +71,8 @@ interface MetaWindow {
 };
 
 module GnomeSystem {
-	const Meta = imports.gi.Meta;
+	const {GLib, Meta} = imports.gi;
 	const Main = imports.ui.main;
-	const Mainloop = imports.mainloop;
 
 	export const Clutter = imports.gi.Clutter;
 	export const Cairo = imports.cairo;
@@ -213,7 +212,7 @@ module GnomeSystem {
 	}
 
 	export function activateLater(win: MetaWindow): void {
-		Mainloop.idle_add(function() {
+		GLib.idle_add(function() {
 			Main.activateWindow(win, global.get_current_time());
 			return false;
 		});
