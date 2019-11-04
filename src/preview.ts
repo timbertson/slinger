@@ -19,7 +19,7 @@ module Preview {
 		private Sys: System<WindowType>
 		private size: Point
 		private base: Rect
-		private preview: Rect
+		private preview: Rect = null
 		private selection: MenuSelection;
 		private windowRect: Rect;
 		private win: WindowType;
