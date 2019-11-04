@@ -170,8 +170,18 @@ module Menu {
 			const deviceManager = Sys.Clutter.DeviceManager.get_default();
 			;[Sys.Clutter.InputDeviceType.KEYBOARD_DEVICE, Sys.Clutter.InputDeviceType.POINTER_DEVICE].forEach(function(type) {
 				let device = deviceManager.get_core_device(type)
-				device.grab(backgroundActor)
-				grabs.push(device)
+				if (device == null) {
+					log("ERROR: DeviceManager.get_core_device("+type+") returned null")
+					// Dumb workaround for https://gitlab.gnome.org/GNOME/mutter/issues/799
+					// The core device is consistently the first one, so fall back to that.
+					device = <InputDevice>((<any>deviceManager).list_devices().find(function(device: any) {
+						return device.device_type == type
+					}));
+				}
+				if (device != null) {
+					device.grab(backgroundActor)
+					grabs.push(device)
+				}
 			})
 
 			// var suspendedMouseMode = MouseMode.NOOP;
