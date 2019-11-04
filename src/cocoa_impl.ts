@@ -5,8 +5,29 @@
 /// <reference path="actions.ts" />
 
 module Wrapper {
-	// function ignore(_: any): void {
-	// }
+	enum InputDeviceType {
+		KEYBOARD_DEVICE,
+		POINTER_DEVICE
+	}
+
+	class InputDevice {
+		grab: (actor: Actor) => void
+		ungrab: () => void
+
+		constructor(get: any, type: InputDeviceType) {
+			switch(type) {
+				case InputDeviceType.KEYBOARD_DEVICE:
+					this.grab = get.fn('grab_keyboard')
+					this.ungrab = get.fn('ungrab_keyboard')
+					break
+
+				case InputDeviceType.POINTER_DEVICE:
+					this.grab = get.fn('grab_pointer')
+					this.ungrab = get.fn('ungrab_pointer')
+					break
+			}
+		}
+	}
 
 	function makeGetters(obj: any) {
 		function stubFn(name: string) {
@@ -42,13 +63,17 @@ module Wrapper {
 		function makeClutter(obj: any): ClutterModule {
 			let get = makeGetters(obj);
 			return {
+				InputDeviceType: InputDeviceType,
 				EVENT_STOP: ((get.prop('EVENT_STOP') as any) as ClutterEventResponse),
-				grab_pointer: get.fn('grab_pointer'),
-				grab_keyboard: get.fn('grab_keyboard'),
-				ungrab_pointer: get.fn('ungrab_pointer'),
-				ungrab_keyboard: get.fn('ungrab_keyboard'),
 				ModifierType: {
 					SHIFT_MASK: (get.prop('SHIFT_MASK') as number),
+				},
+				DeviceManager: {
+					get_default: function() {
+						return {
+							get_core_device: function(type: InputDeviceType) { return new InputDevice(get, type) }
+						}
+					}
 				}
 			}
 		}

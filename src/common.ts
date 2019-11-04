@@ -30,14 +30,29 @@ type Actor = Connectable & {
 	hide(): void
 	show(): void
 };
+
+interface InputDeviceType { }
+
+interface InputDevice {
+	grab(actor: Actor): void
+	ungrab(): void
+}
+
+interface DeviceManager {
+	get_core_device(type: InputDeviceType): InputDevice
+}
+
 interface ClutterModule {
 	EVENT_STOP: ClutterEventResponse
-	grab_pointer(actor: Actor): void
-	ungrab_pointer(): void
-	grab_keyboard(actor: Actor): void
-	ungrab_keyboard(): void
 	ModifierType: {
 		SHIFT_MASK: number
+	}
+	InputDeviceType: {
+		POINTER_DEVICE: InputDeviceType
+		KEYBOARD_DEVICE: InputDeviceType
+	}
+	DeviceManager: {
+		get_default(): DeviceManager
 	}
 };
 
