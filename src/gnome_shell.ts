@@ -212,7 +212,7 @@ module GnomeSystem {
 	}
 
 	export function activateLater(win: MetaWindow): void {
-		GLib.idle_add(function() {
+		GLib.idle_add(GLib.PRIORITY_DEFAULT, function() {
 			Main.activateWindow(win, global.get_current_time());
 			return false;
 		});
