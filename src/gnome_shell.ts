@@ -220,7 +220,7 @@ module GnomeSystem {
 	}
 
 	export function activateLater(win: MetaWindow): void {
-		GLib.idle_add(GLib.PRIORITY_DEFAULT, function() {
+		GLib.timeout_add(GLib.PRIORITY_DEFAULT, 10, function() {
 			Main.activateWindow(win, global.get_current_time());
 			return false;
 		});
