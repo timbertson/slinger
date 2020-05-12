@@ -211,6 +211,14 @@ module GnomeSystem {
 		Main.activateWindow(win, global.get_current_time());
 	}
 
+	export function pushModal(actor: Actor): boolean {
+		return Main.pushModal(actor);
+	}
+
+	export function popModal(actor: Actor): void {
+		Main.popModal(actor);
+	}
+
 	export function activateLater(win: MetaWindow): void {
 		GLib.idle_add(GLib.PRIORITY_DEFAULT, function() {
 			Main.activateWindow(win, global.get_current_time());

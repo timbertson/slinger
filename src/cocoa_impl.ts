@@ -63,15 +63,17 @@ module Wrapper {
 		function makeClutter(obj: any): ClutterModule {
 			let get = makeGetters(obj);
 			return {
-				InputDeviceType: InputDeviceType,
 				EVENT_STOP: ((get.prop('EVENT_STOP') as any) as ClutterEventResponse),
 				ModifierType: {
 					SHIFT_MASK: (get.prop('SHIFT_MASK') as number),
 				},
-				DeviceManager: {
-					get_default: function() {
-						return {
-							get_core_device: function(type: InputDeviceType) { return new InputDevice(get, type) }
+				get_default_backend: function() {
+					return {
+						get_default_seat: function() {
+							return {
+								get_pointer: function() { return new InputDevice(get, InputDeviceType.POINTER_DEVICE) },
+								get_keyboard: function() { return new InputDevice(get, InputDeviceType.KEYBOARD_DEVICE) }
+							}
 						}
 					}
 				}
@@ -110,6 +112,9 @@ module Wrapper {
 				setWindowHidden: get.fn('setWindowHidden'),
 				stableSequence: get.fn('stableSequence'),
 				windowTitle: get.fn('windowTitle'),
+
+				pushModal: function(_: Actor) { return false; },
+				popModal: function(_: Actor) {},
 
 				// events are already sent in workspace coordinate system
 				translateEventCoordinates: function(point: Point, _win: any) { return point; },

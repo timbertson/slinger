@@ -101,7 +101,6 @@ module Menu {
 
 	export class Menu<WindowType> {
 		ui: Actor;
-		private parent: Actor;
 		private preview: Preview.LayoutPreview<WindowType>;
 		private menuHandlers: MenuHandlers.Handlers;
 		private menu: Actor;
@@ -109,7 +108,7 @@ module Menu {
 		private Sys: System<WindowType>;
 		private win: WindowType;
 		private splitMode: SplitMode;
-		private grabs: Array<InputDevice> = [];
+		private cleanup: Array<Function> = [];
 
 		static show<WindowType>(Sys: System<WindowType>,
 				parent: Actor,
@@ -136,12 +135,11 @@ module Menu {
 			this.Sys = Sys;
 			p("creating menu at " + JSON.stringify(origin) + " with bounds " + JSON.stringify(screen));
 			const self = this;
-			this.parent = parent;
 			this.win = win;
 			this.mouseMode = MouseMode.MENU;
 
-			const backgroundActor = Sys.newClutterActor();
-			backgroundActor.set_size(screen.x, screen.y);
+			const modal = Sys.newClutterActor();
+			modal.set_size(screen.x, screen.y);
 
 			const menu = this.menu = Sys.newClutterActor();
 
@@ -160,66 +158,60 @@ module Menu {
 			const preview = this.preview = new Preview.LayoutPreview(Sys, screen, windowRect, win);
 			const handlers = this.menuHandlers = new MenuHandlers.Handlers(Sys, self.splitMode, menuSize, origin, canvas, preview);
 			canvas.connect('draw', handlers.draw);
-			backgroundActor.connect('motion-event', function(_actor: Actor, event: ClutterMouseEvent) {
+			modal.connect('motion-event', function(_actor: Actor, event: ClutterMouseEvent) {
 				let position = Sys.translateEventCoordinates(Point.ofEvent(event), win);
 				self.menuHandlers.onMouseMove(self.mouseMode, self.splitMode, position);
 				return Sys.Clutter.EVENT_STOP;
 			});
 
-			const grabs = this.grabs;
-			const deviceManager = Sys.Clutter.DeviceManager.get_default();
-			;[Sys.Clutter.InputDeviceType.KEYBOARD_DEVICE, Sys.Clutter.InputDeviceType.POINTER_DEVICE].forEach(function(type) {
-				let device = deviceManager.get_core_device(type)
-				if (device == null) {
-					log("ERROR: DeviceManager.get_core_device("+type+") returned null")
-					// Dumb workaround for https://gitlab.gnome.org/GNOME/mutter/issues/799
-					// The core device is consistently the first one, so fall back to that.
-					device = <InputDevice>((<any>deviceManager).list_devices().find(function(device: any) {
-						return device.device_type == type
-					}));
-				}
-				if (device != null) {
-					device.grab(backgroundActor)
-					grabs.push(device)
-				}
-			})
+			if (!Sys.pushModal(modal)) {
+				p("Error: pushModal returned false");
+			}
+			this.cleanup.push(() => Sys.popModal(modal));
+			p("pushModal succeeded");
+
+			const seat = Sys.Clutter.get_default_backend().get_default_seat();
+			const keyboard = seat.get_keyboard();
+			keyboard.grab(modal);
+			this.cleanup.push(() => keyboard.ungrab());
 
 			// var suspendedMouseMode = MouseMode.NOOP;
-			backgroundActor.connect('key-press-event', function(_actor: Actor, event: ClutterKeyEvent) {
+			modal.connect('key-press-event', function(_actor: Actor, event: ClutterKeyEvent) {
 				self.onKeyPress(event);
 				return Sys.Clutter.EVENT_STOP;
 			});
 
-			backgroundActor.connect('key-release-event', function(_actor: Actor, event: ClutterKeyEvent) {
+			modal.connect('key-release-event', function(_actor: Actor, event: ClutterKeyEvent) {
 				self.onKeyRelease(event);
 				return Sys.Clutter.EVENT_STOP;
 			});
 
-			backgroundActor.connect('button-press-event', function() {
+			modal.connect('button-press-event', function() {
 				self.complete(true);
 				return Sys.Clutter.EVENT_STOP;
 			});
 
 			const coverPane = Sys.newClutterActor();
+			this.ui = coverPane;
 			coverPane.set_reactive(true);
 			coverPane.connect('event', function () {
 				return Sys.Clutter.EVENT_STOP;
 			});
 
-			this.ui = coverPane;
-			backgroundActor.set_reactive(true);
-			backgroundActor.add_actor(menu);
+			modal.set_reactive(true);
+			modal.add_actor(menu);
 			coverPane.add_actor(this.preview.ui);
-			coverPane.add_actor(backgroundActor);
+			coverPane.add_actor(modal);
 
-			this.parent.insert_child_above(this.ui, null);
-			backgroundActor.grab_key_focus();
+			parent.insert_child_above(coverPane, null);
+			this.cleanup.push(() => parent.remove_child(coverPane));
+			modal.grab_key_focus();
 			canvas.invalidate();
 		}
 
 		onKeyPress(event: ClutterKeyEvent) {
 			const code: number = event.get_key_code();
-			// p('keypress: ' + code);
+			p('keypress: ' + code);
 			if (code == KeyCode.ESC) {
 				this.complete(false);
 			} else if (code == KeyCode.RETURN) {
@@ -238,6 +230,7 @@ module Menu {
 						if (this.menuHandlers.trackMouse(this.mouseMode)) {
 							p("entering mode " + newMode);
 							this.mouseMode = newMode;
+							// hide the menu, we're showing a window manipulation rect
 							this.menu.hide();
 						} else {
 							p("not entering " + newMode + " due to current menu selection");
@@ -307,14 +300,14 @@ module Menu {
 
 		destroy() {
 			p("hiding menu")
-			if (this.displayed()) {
-				this.grabs.forEach(function(device) {
-					device.ungrab();
-				});
-				this.grabs = [];
-				this.parent.remove_child(this.ui);
-				this.parent = null;
-			}
+			this.cleanup.forEach(function(fn) {
+				try {
+					fn();
+				} catch(e) {
+					p("Cleanup action failed: " + e)
+				}
+			});
+			this.cleanup = [];
 		}
 
 		private complete(accept: boolean) {
@@ -332,10 +325,6 @@ module Menu {
 				}
 			}
 			this.destroy();
-		}
-
-		private displayed() {
-			return (this.parent !== null);
 		}
 	}
 }

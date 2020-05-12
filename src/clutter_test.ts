@@ -65,6 +65,10 @@ class ClutterSystem implements System<ActorExt> {
 	setWindowHidden(win: ActorExt, hidden: boolean): void {
 		win.set_opacity(hidden ? 0 : 255);
 	}
+	pushModal(_: ActorExt): boolean {
+		return false;
+	}
+	popModal(_: ActorExt): void {}
 }
 
 module ClutterTest {
