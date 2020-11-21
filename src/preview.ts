@@ -23,7 +23,7 @@ module Preview {
 		private selection: MenuSelection;
 		private windowRect: Rect;
 		private win: WindowType;
-		private windowHidden: boolean;
+		private visible: boolean;
 		ui: Actor
 		resizeCorner: Anchor;
 		trackingOrigin: Point;
@@ -46,7 +46,7 @@ module Preview {
 			this.windowRect = windowRect;
 			this.win = win;
 			this.ui.hide();
-			this.windowHidden = null;
+			this.visible = false;
 		}
 
 		private selectOuter(loc: Anchor, splitMode: SplitMode): Rect {
@@ -343,22 +343,30 @@ module Preview {
 			this.resetPreview();
 		}
 
-		private setWindowHidden(hidden: boolean) {
-			if (this.win !== null && this.windowHidden !== hidden) {
-				this.windowHidden = hidden;
-				this.Sys.setWindowHidden(this.win, hidden);
+		private setVisible(visible: boolean) {
+			// Whenever the preview is visible, the window is hidden
+			if (this.visible == visible) {
+				return
 			}
+			// p('setting visible to: ' + visible)
+			if (this.win !== null) {
+				this.Sys.setWindowHidden(this.win, visible);
+			}
+			if (visible) {
+				this.ui.show();
+			} else {
+				this.ui.hide();
+			}
+			this.visible = visible;
 		}
 
 		private updateUi() {
 			if (this.preview == null) {
-				this.ui.hide();
-				this.setWindowHidden(false);
+				this.setVisible(false);
 			} else {
 				this.ui.set_size(this.preview.size.x, this.preview.size.y);
 				this.ui.set_position(this.preview.pos.x, this.preview.pos.y);
-				this.setWindowHidden(true);
-				this.ui.show();
+				this.setVisible(true);
 			}
 		}
 

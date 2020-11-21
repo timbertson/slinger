@@ -227,7 +227,12 @@ module GnomeSystem {
 	}
 
 	export function setWindowHidden(win: MetaWindow, hidden: boolean) {
-		win.get_compositor_private().set_opacity(hidden ? 0 : 255);
+		let actor = win.get_compositor_private()
+		if (hidden) {
+			actor.hide()
+		} else {
+			actor.show()
+		}
 	}
 }
 
