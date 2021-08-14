@@ -168,7 +168,9 @@ module WindowActions {
 				return null; // no active window
 			}
 
-			const workArea = Sys.workspaceArea(win);
+			// inaccurate but pleasant: lower the midpoint (by growing the Y height 20%)
+			// so that almost-full-height apps are "on top", regardless of top/bottom screen chrome.
+			const workArea = Point.scaleAxis(Axis.y, 1.2, Sys.workspaceArea(win));
 			const screenMidpoint = Point.scaleConstant(0.5, workArea);
 
 			const windows = (visibleWindows
