@@ -132,8 +132,12 @@ module Menu {
 			const windowRect = Sys.windowRect(win);
 			assert(windowRect, "windowRect()");
 
+			const screenRatio = (screen.x / Math.max(screen.y, 1));
+			p("Screen ratio: " + screenRatio)
+			this.splitMode = screenRatio > 2 ? SplitMode.SIX : SplitMode.FOUR;
+
 			this.Sys = Sys;
-			p("creating menu at " + JSON.stringify(origin) + " with bounds " + JSON.stringify(screen));
+			p("creating menu at " + JSON.stringify(origin) + " with bounds " + JSON.stringify(screen) + " and split mode " + this.splitMode);
 			const self = this;
 			this.win = win;
 			this.mouseMode = MouseMode.MENU;
@@ -153,7 +157,6 @@ module Menu {
 			const position: Point = Point.subtract(origin, Point.scaleConstant(0.5, menuSize));
 			menu.set_position(position.x, position.y);
 
-			this.splitMode = SplitMode.FOUR;
 
 			const preview = this.preview = new Preview.LayoutPreview(Sys, screen, windowRect, win);
 			const handlers = this.menuHandlers = new MenuHandlers.Handlers(Sys, self.splitMode, menuSize, origin, canvas, preview);
