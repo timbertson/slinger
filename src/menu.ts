@@ -128,7 +128,7 @@ module Menu {
 				win: WindowType)
 		{
 			const screen: Point = Sys.workspaceArea(win);
-			log("getting windowRect of win " + win);
+			p("getting windowRect of win " + win);
 			const windowRect = Sys.windowRect(win);
 			assert(windowRect, "windowRect()");
 
@@ -144,6 +144,7 @@ module Menu {
 
 			const modal = Sys.newClutterActor();
 			modal.set_size(screen.x, screen.y);
+			modal.set_reactive(true);
 
 			const menu = this.menu = Sys.newClutterActor();
 
@@ -164,21 +165,10 @@ module Menu {
 			modal.connect('motion-event', function(_actor: Actor, event: ClutterMouseEvent) {
 				let position = Sys.translateEventCoordinates(Point.ofEvent(event), win);
 				self.menuHandlers.onMouseMove(self.mouseMode, self.splitMode, position);
-				return Sys.Clutter.EVENT_STOP;
+				return Sys.Clutter.EVENT_PROPAGATE;
 			});
 
-			if (!Sys.pushModal(modal)) {
-				p("Error: pushModal returned false");
-			}
-			this.cleanup.push(() => Sys.popModal(modal));
-			p("pushModal succeeded");
 
-			const seat = Sys.Clutter.get_default_backend().get_default_seat();
-			const keyboard = seat.get_keyboard();
-			keyboard.grab(modal);
-			this.cleanup.push(() => keyboard.ungrab());
-
-			// var suspendedMouseMode = MouseMode.NOOP;
 			modal.connect('key-press-event', function(_actor: Actor, event: ClutterKeyEvent) {
 				self.onKeyPress(event);
 				return Sys.Clutter.EVENT_STOP;
@@ -196,10 +186,6 @@ module Menu {
 
 			const coverPane = Sys.newClutterActor();
 			this.ui = coverPane;
-			coverPane.set_reactive(true);
-			coverPane.connect('event', function () {
-				return Sys.Clutter.EVENT_STOP;
-			});
 
 			modal.set_reactive(true);
 			modal.add_actor(menu);
@@ -207,7 +193,15 @@ module Menu {
 			coverPane.add_actor(modal);
 
 			parent.insert_child_above(coverPane, null);
-			this.cleanup.push(() => parent.remove_child(coverPane));
+
+			const grab = Sys.pushModal(modal);
+			p("pushModal succeeded");
+			this.cleanup.push(() => {
+				p("Popping modal");
+				Sys.popModal(grab)
+				parent.remove_child(coverPane);
+			});
+
 			modal.grab_key_focus();
 			canvas.invalidate();
 		}

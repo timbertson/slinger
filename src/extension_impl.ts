@@ -102,18 +102,19 @@ class Extension {
 
 	private show_ui() {
 		this.hide_ui();
-		const display = Gdk.Display.get_default();
 		const window = GnomeSystem.currentWindow();
 		const self = this;
 
-		const pointer = display.get_device_manager().get_client_pointer();
-		const mousePos = pointer.get_position();
+		const mousePosArray = global.get_pointer();
+		const mousePos: Point = { x: mousePosArray[0], y: mousePosArray[1] };
 
 		const workspaceOffset = GnomeSystem.workspaceOffset(window);
+		p("mouse position: " + JSON.stringify(mousePos));
+		p("workspace offset: " + JSON.stringify(workspaceOffset));
 
 		this.menu = Menu.Menu.show(GnomeSystem,
 			(global.window_group as Actor),
-			Point.subtract({ x: mousePos[1], y: mousePos[2]}, workspaceOffset),
+			Point.subtract(mousePos, workspaceOffset),
 			window
 		);
 
@@ -123,19 +124,19 @@ class Extension {
 
 		this.menu.ui.set_position(workspaceOffset.x, workspaceOffset.y);
 
-		Main.pushModal(this.menu.ui);
 		this.menu.ui.connect('unrealize', function() {
 			p("hiding modal");
 			GnomeSystem.setWindowHidden(window, false);
-			Main.popModal(self.menu.ui);
 			self.menu = null;
 			return Clutter.EVENT_PROPAGATE;
 		});
+		return Clutter.EVENT_STOP;
 	}
 
 	private hide_ui() {
 		if (this.menu) {
 			this.menu.destroy();
+			this.menu = null;
 		}
 	}
 

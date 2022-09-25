@@ -2,9 +2,6 @@ var autoImport = (function() {
     var GLib = imports.gi.GLib;
     var Gio = imports.gi.Gio;
     var ENABLED = (GLib.getenv("GJS_AUTOIMPORT") == "1");
-    function setEnabled(newval) {
-        ENABLED = newval;
-    }
     function myLog(msg) {
         log('[gjs-autoimport] ' + msg);
     }
@@ -13,7 +10,7 @@ var autoImport = (function() {
         var oldSearchPath = imports.searchPath.slice();
         try {
             imports.searchPath = ["/"];
-            return imports[path];
+            return imports[path.slice(1)];
         }
         finally {
             imports.searchPath = oldSearchPath;

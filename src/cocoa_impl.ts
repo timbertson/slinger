@@ -5,30 +5,6 @@
 /// <reference path="actions.ts" />
 
 module Wrapper {
-	enum InputDeviceType {
-		KEYBOARD_DEVICE,
-		POINTER_DEVICE
-	}
-
-	class InputDevice {
-		grab: (actor: Actor) => void
-		ungrab: () => void
-
-		constructor(get: any, type: InputDeviceType) {
-			switch(type) {
-				case InputDeviceType.KEYBOARD_DEVICE:
-					this.grab = get.fn('grab_keyboard')
-					this.ungrab = get.fn('ungrab_keyboard')
-					break
-
-				case InputDeviceType.POINTER_DEVICE:
-					this.grab = get.fn('grab_pointer')
-					this.ungrab = get.fn('ungrab_pointer')
-					break
-			}
-		}
-	}
-
 	function makeGetters(obj: any) {
 		function stubFn(name: string) {
 			return function() {
@@ -64,19 +40,10 @@ module Wrapper {
 			let get = makeGetters(obj);
 			return {
 				EVENT_STOP: ((get.prop('EVENT_STOP') as any) as ClutterEventResponse),
+				EVENT_PROPAGATE: ((get.prop('EVENT_PROPAGATE') as any) as ClutterEventResponse),
 				ModifierType: {
 					SHIFT_MASK: (get.prop('SHIFT_MASK') as number),
 				},
-				get_default_backend: function() {
-					return {
-						get_default_seat: function() {
-							return {
-								get_pointer: function() { return new InputDevice(get, InputDeviceType.POINTER_DEVICE) },
-								get_keyboard: function() { return new InputDevice(get, InputDeviceType.KEYBOARD_DEVICE) }
-							}
-						}
-					}
-				}
 			}
 		}
 
@@ -113,8 +80,9 @@ module Wrapper {
 				stableSequence: get.fn('stableSequence'),
 				windowTitle: get.fn('windowTitle'),
 
-				pushModal: function(_: Actor) { return false; },
-				popModal: function(_: Actor) {},
+				// TODO
+				pushModal: function(_: Actor): ClutterGrab { return {} as ClutterGrab; },
+				popModal: function(_: ClutterGrab) {},
 
 				// events are already sent in workspace coordinate system
 				translateEventCoordinates: function(point: Point, _win: any) { return point; },

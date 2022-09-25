@@ -27,8 +27,8 @@ interface System<WindowType> {
 	stableSequence(win: WindowType): number
 	windowTitle(win: WindowType): string // only used for debugging
 
-	pushModal(actor: Actor): boolean
-	popModal(actor: Actor): void
+	pushModal(actor: Actor): ClutterGrab
+	popModal(grab: ClutterGrab): void
 
 	Clutter: ClutterModule
 	Cairo: CairoModule

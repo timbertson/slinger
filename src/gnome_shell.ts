@@ -15,10 +15,6 @@ interface MetaDisplay {
 	'focus-window': MetaWindow
 }
 
-interface MetaX11Display {
-	get_screen_number(): number
-}
-
 interface MetaWorkspaceManager {
 	get_active_workspace_index(): number
 	get_active_workspace(): MetaWorkspace
@@ -26,13 +22,16 @@ interface MetaWorkspaceManager {
 	get_workspace_by_index(i: number): MetaWorkspace
 }
 
+type MutterPoint = [number, number];
+
 type Global = {
 	display: MetaDisplay
-	x11_display: MetaX11Display
 	workspace_manager: MetaWorkspaceManager
 	window_group: {}
 	get_current_time: () => number
+	get_pointer: () => MutterPoint
 }
+
 declare var global: Global;
 
 type MetaWorkspace = {
@@ -211,12 +210,12 @@ module GnomeSystem {
 		Main.activateWindow(win, global.get_current_time());
 	}
 
-	export function pushModal(actor: Actor): boolean {
+	export function pushModal(actor: Actor): ClutterGrab {
 		return Main.pushModal(actor);
 	}
 
-	export function popModal(actor: Actor): void {
-		Main.popModal(actor);
+	export function popModal(grab: ClutterGrab): void {
+		Main.popModal(grab);
 	}
 
 	export function activateLater(win: MetaWindow): void {

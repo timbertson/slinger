@@ -1,7 +1,6 @@
 declare var log: {(m: any):void};
 
 interface Point {
-	[index: string]: number
 	x: number
 	y: number
 }
@@ -15,6 +14,7 @@ interface Rect {
 interface CairoOperator { __CairoOperator: null };
 interface ClutterEventResponse { __ClutterEventResponse: null };
 interface ClutterColor { __ClutterColor: null };
+interface ClutterGrab { __ClutterGrab: null };
 
 type Actor = Connectable & {
 	set_position(x: number, y: number): void
@@ -31,21 +31,11 @@ type Actor = Connectable & {
 	show(): void
 };
 
-interface InputDevice {
-	grab(actor: Actor): void
-	ungrab(): void
-}
-
 interface ClutterModule {
 	EVENT_STOP: ClutterEventResponse
+	EVENT_PROPAGATE: ClutterEventResponse
 	ModifierType: {
 		SHIFT_MASK: number
-	}
-	get_default_backend(): {
-		get_default_seat(): {
-			get_pointer(): InputDevice
-			get_keyboard(): InputDevice
-		}
 	}
 };
 
