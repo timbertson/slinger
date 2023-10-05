@@ -95,7 +95,7 @@ module Manipulations {
 		);
 	}
 
-	export function largestFreeRect(workArea: Point, windows: Array<Rect>, minArea: Number): Rect | null {
+	export function largestFreeRect(workArea: Point, windows: Array<Rect>, minArea: number): Rect | null {
 		let freeWindowAreas = windows.map(win => freeRectsAround(workArea, win));
 		// log("freeWindowAreas = " + JSON.stringify(freeWindowAreas));
 

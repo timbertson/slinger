@@ -23,5 +23,5 @@ else
 			--noImplicitThis \
 			--noUnusedParameters \
 			--noUnusedLocals \
-			--out "$1"
+			--outFile "$1"
 fi
