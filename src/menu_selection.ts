@@ -1,15 +1,17 @@
-const enum Ring {
+import { Anchor } from "./common.js";
+
+export const enum Ring {
 	NONE = 0,
 	INNER,
 	OUTER
 }
 
-const enum SplitMode {
+export const enum SplitMode {
 	FOUR,
 	SIX
 }
 
-class MenuSelection {
+export class MenuSelection {
 	ring: Ring
 	index: number
 	splitMode: SplitMode
@@ -42,7 +44,7 @@ class MenuSelection {
 	}
 }
 
-module MenuSelection {
+export module MenuSelection {
 	export function None(splitMode: SplitMode): MenuSelection {
 		return new MenuSelection(Ring.NONE, 0, splitMode);
 	}

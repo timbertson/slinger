@@ -1,30 +1,38 @@
-/// <reference path="system.ts" />
+/// <reference types="@girs/cairo-1.0/ambient"/>
+import GLib from 'gi://GLib'
+import Meta from 'gi://Meta'
+import ClutterImpl from 'gi://Clutter'
+import CairoImpl from 'gi://cairo'
+import * as Main from "resource:///org/gnome/shell/ui/main.js"
 
-declare var imports: any;
+import { CairoModule, ClutterCanvas, ClutterColor, ClutterGrab, ClutterModule } from "./common.js"
+import { Actor } from "./common.js"
+import { Rect } from "./rect.js"
+import { Point } from './point.js'
 
-interface MetaRect {
+export interface MetaRect {
 	x: number
 	y: number
 	width: number
 	height: number
 }
 
-interface MetaDisplay {
+export interface MetaDisplay {
 	get_current_monitor(): number
 	get_workspace_manager(): MetaWorkspaceManager
 	'focus-window': MetaWindow
 }
 
-interface MetaWorkspaceManager {
+export interface MetaWorkspaceManager {
 	get_active_workspace_index(): number
 	get_active_workspace(): MetaWorkspace
 	get_n_workspaces(): number
 	get_workspace_by_index(i: number): MetaWorkspace
 }
 
-type MutterPoint = [number, number];
+export type MutterPoint = [number, number];
 
-type Global = {
+export type Global = {
 	display: MetaDisplay
 	workspace_manager: MetaWorkspaceManager
 	window_group: {}
@@ -32,20 +40,22 @@ type Global = {
 	get_pointer: () => MutterPoint
 }
 
-declare var global: Global;
+declare global {
+	var global: Global;
+}
 
-type MetaWorkspace = {
+export type MetaWorkspace = {
 	get_work_area_for_monitor(i: number): MetaRect
 	list_windows(): Array<MetaWindow>
 	activate(time: number): void
 	activate_with_focus(win: MetaWindow, time: number): void
 }
 
-enum MaximizeFlags {
+export enum MaximizeFlags {
 	Neither = 0
 }
 
-interface MetaWindow {
+export interface MetaWindow {
 	get_title(): string
 	get_window_type(): number
 	get_frame_rect(): MetaRect
@@ -69,17 +79,22 @@ interface MetaWindow {
 	get_monitor(): number
 };
 
-module GnomeSystem {
-	const {GLib, Meta} = imports.gi;
-	const Main = imports.ui.main;
 
-	export const Clutter = imports.gi.Clutter;
-	export const Cairo = imports.cairo;
+export module GnomeSystem {
+	export const Clutter: ClutterModule = ClutterImpl as unknown as ClutterModule
+	export const Cairo: CairoModule = CairoImpl as unknown as CairoModule
 
-	export function newClutterActor(): Actor { return new Clutter.Actor(); }
-	export function newClutterCanvas(): ClutterCanvas { return new Clutter.Canvas(); }
+	// TODO can we do less type casting?
+	export function newClutterActor(): Actor {
+		return new ClutterImpl.Actor() as unknown as Actor;
+	}
+	export function newClutterCanvas(): ClutterCanvas {
+		return new ClutterImpl.Canvas() as unknown as ClutterCanvas;
+	}
 	export function newClutterColor(components: { red: number, green: number, blue: number, alpha: number}): ClutterColor {
-		return new Clutter.Color(components);
+		// generated types are wrong, it takes obj with { red, gren, blue} props not separate args
+		const Color = ClutterImpl.Color as any
+		return new Color(components) as unknown as ClutterColor
 	}
 
 	export function numWorkspaces(): number {

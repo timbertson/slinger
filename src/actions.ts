@@ -1,8 +1,10 @@
-/// <reference path="manipulations.ts" />
-/// <reference path="assert.ts" />
-/// <reference path="system.ts" />
+import { Axis, log, p, assert } from './common.js'
+import { Rect } from './rect.js';
+import { Point } from './point.js';
+import { System } from './system.js'
+import { Manipulations } from './manipulations.js'
 
-interface WindowActions {
+export interface WindowActions {
 	moveAction(direction: number, axis: Axis): Function
 	resizeAction(direction: number, axis: Axis): Function
 	switchWorkspace(diff: number): Function
@@ -17,7 +19,7 @@ interface WindowActions {
 	distribute(): void
 }
 
-module WindowActions {
+export module WindowActions {
 	export function Make<WindowType>(Sys: System<WindowType>): WindowActions {
 		function windowManipulator(fn: (r: Rect, bounds: Point) => Rect): Function {
 			return function() {

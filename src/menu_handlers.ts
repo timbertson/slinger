@@ -1,12 +1,10 @@
-/// <reference path="common.ts" />
-/// <reference path="logging.ts" />
-/// <reference path="preview.ts" />
-/// <reference path="point.ts" />
-/// <reference path="rect.ts" />
-/// <reference path="menu.ts" />
-/// <reference path="menu_selection.ts" />
+import { Anchor, CairoContext, ClutterCanvas, ClutterEventResponse, Color, Direction, Grey, MouseMode, p } from "./common.js";
+import { MenuSelection, SplitMode, Ring } from "./menu_selection.js";
+import { Point } from "./point.js";
+import { Preview } from "./preview.js";
+import { System } from "./system.js";
 
-module MenuHandlers {
+export module MenuHandlers {
 	const PI = Math.PI;
 	const TAO = 2 * PI;
 	const floor = Math.floor;

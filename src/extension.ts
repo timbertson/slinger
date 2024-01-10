@@ -1,33 +1,31 @@
-/// <reference path="common.ts" />
-/// <reference path="extension_settings.ts" />
-/// <reference path="menu.ts" />
-/// <reference path="logging.ts" />
-/// <reference path="gnome_shell.ts" />
-/// <reference path="actions.ts" />
+/// <reference types="@girs/gnome-shell/ambient"/>
+import * as Main from "resource:///org/gnome/shell/ui/main.js"
+import Shell from 'gi://Shell'
+import Meta from 'gi://Meta'
+import Clutter from 'gi://Clutter';
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const Main = imports.ui.main;
-const Shell = imports.gi.Shell;
-const Meta = imports.gi.Meta;
-const Gdk = imports.gi.Gdk;
-const Clutter = imports.gi.Clutter;
+import { Actor, Axis, p } from './common.js'
+import { Menu } from './menu.js'
+import { GnomeSystem, MetaWindow } from './gnome_shell.js'
+import { Settings } from './extension_settings.js'
+import { WindowActions } from './actions.js';
+import { Point } from './point.js';
 
 function failsafe(fn: Function, desc?: string) {
 	return function(this: any) {
-		try {
+		// try {
 			if (desc) p("Running: " + desc);
 			fn.apply(this, arguments)
-		} catch(e) {
-			p('Error: ' + e);
-		}
+		// } catch(e) {
+			// p('Error: ' + e);
+		// }
 	}
 }
 
-class Extension {
+export default class Slinger extends Extension {
 	private disable_actions: Array<Function>;
 	menu: Menu.Menu<MetaWindow>;
-
-	constructor() {
-	}
 
 	private init_keybindings() {
 		p("initializing keybindings");
@@ -119,7 +117,7 @@ class Extension {
 		);
 
 		if (!this.menu) {
-			return;
+			return Clutter.EVENT_PROPAGATE;
 		}
 
 		this.menu.ui.set_position(workspaceOffset.x, workspaceOffset.y);
@@ -164,8 +162,4 @@ class Extension {
 			p("disabled");
 		})();
 	}
-}
-
-function init() {
-	return new Extension();
 }

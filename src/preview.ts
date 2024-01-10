@@ -1,10 +1,11 @@
-/// <reference path="common.ts" />
-/// <reference path="logging.ts" />
-/// <reference path="menu.ts" />
-/// <reference path="menu_selection.ts" />
-/// <reference path="math.ts" />
+import { Anchor, Actor, MouseMode, Axis } from "./common.js";
+import { MathUtil } from "./math.js";
+import { MenuSelection, SplitMode, Ring } from "./menu_selection.js";
+import { Point } from "./point.js";
+import { Rect } from "./rect.js";
+import { System } from "./system.js";
 
-module Preview {
+export module Preview {
 	const MANIPULATION_SCALE = 2.2;
 	const MINIMUM_SIZE = 20;
 

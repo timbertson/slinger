@@ -1,14 +1,13 @@
-/// <reference path="common.ts" />
-/// <reference path="assert.ts" />
-/// <reference path="logging.ts" />
-/// <reference path="preview.ts" />
-/// <reference path="point.ts" />
-/// <reference path="rect.ts" />
-/// <reference path="manipulations.ts" />
-/// <reference path="menu_selection.ts" />
-/// <reference path="menu_handlers.ts" />
+import { Actor, Anchor, Axis, ClutterKeyEvent, ClutterMouseEvent, Direction, MouseMode, assert, p } from "./common.js";
+import { Manipulations } from "./manipulations.js";
+import { MenuHandlers } from "./menu_handlers.js";
+import { MenuSelection, Ring, SplitMode } from "./menu_selection.js";
+import { Point } from "./point.js";
+import { Preview } from "./preview.js";
+import { Rect } from "./rect.js";
+import { System } from "./system.js";
 
-module Menu {
+export module Menu {
 	export const enum Action {
 		CANCEL,
 		MINIMIZE,

@@ -1,5 +1,0 @@
-copy-autoimport-shim:
-	extension/extension.js
-
-make-js:
-	extension/*.js

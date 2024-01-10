@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"paths": {
+			// "*": ["./node_modules/*"],
+			// "@girs/gnome-shell": ["./node_modules/@girs/gnome-shell/dist/index.d.ts"],
+			"@girs/*": ["./node_modules/@girs/*/dist/index.d.ts"]
+		},
+		"moduleResolution": "node16",
+		"target": "es2022",
+		"module": "NodeNext",
+		"alwaysStrict": true,
+		"noImplicitAny": true,
+		"noImplicitReturns": true,
+		"noImplicitThis": true,
+		"noUnusedParameters": true,
+		"noUnusedLocals": true,
+		// "strictNullChecks": true,
+		"outDir": "extension"
+	}
+}

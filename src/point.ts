@@ -1,4 +1,11 @@
-module Point {
+import { Axis, ClutterMouseEvent } from "./common.js";
+
+export interface Point {
+	x: number
+	y: number
+}
+
+export module Point {
 	const floor = Math.floor;
 	export function scale(scale: Point, p: Point): Point {
 		return {
