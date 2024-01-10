@@ -1,6 +1,3 @@
 #!bash -eu
-gup -u \
-	extension.js \
-	cocoa_impl.js \
-	clutter_test.js \
-	;
+gup --always
+tsc
