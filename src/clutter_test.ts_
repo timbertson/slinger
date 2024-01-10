@@ -1,6 +1,4 @@
-/// <reference path="common.ts" />
-/// <reference path="menu.ts" />
-/// <reference path="gnome_shell.ts" />
+import { Actor } from './common.js'
 
 type ActorExt = Actor & {
 	get_position(): Array<number>;

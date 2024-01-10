@@ -1,22 +1,26 @@
-declare var log: {(m: any):void};
+export declare var log: {(m: any):void};
 
-interface Point {
-	x: number
-	y: number
+export function p(msg: String) {
+	log('[slinger]:' + msg);
+}
+export function dump(obj: any) {
+	p(JSON.stringify(obj));
 }
 
-interface Rect {
-	pos: Point
-	size: Point
+export function assert<T>(x: T, msg?: string):T {
+	if(!x) {
+		throw new Error(msg ? ("Assertion failed: " + msg) : "Assertion failed");
+	}
+	return x;
 }
 
 // opaque types (cannot be directly implemented)
-interface CairoOperator { __CairoOperator: null };
-interface ClutterEventResponse { __ClutterEventResponse: null };
-interface ClutterColor { __ClutterColor: null };
-interface ClutterGrab { __ClutterGrab: null };
+export interface CairoOperator { __CairoOperator: null };
+export interface ClutterEventResponse { __ClutterEventResponse: null };
+export interface ClutterColor { __ClutterColor: null };
+export interface ClutterGrab { __ClutterGrab: null };
 
-type Actor = Connectable & {
+export type Actor = Connectable & {
 	set_position(x: number, y: number): void
 	set_opacity(n: number): void
 	set_size(x: number, y: number): void
@@ -31,7 +35,7 @@ type Actor = Connectable & {
 	show(): void
 };
 
-interface ClutterModule {
+export interface ClutterModule {
 	EVENT_STOP: ClutterEventResponse
 	EVENT_PROPAGATE: ClutterEventResponse
 	ModifierType: {
@@ -39,28 +43,28 @@ interface ClutterModule {
 	}
 };
 
-interface Connectable {
+export interface Connectable {
 	connect(signal: String, handler: Function): void
 }
 
-interface ClutterMouseEvent {
+export interface ClutterMouseEvent {
 	get_coords(): Array<number>
 };
-interface ClutterKeyEvent {
+export interface ClutterKeyEvent {
 	get_key_code(): number
 	get_state(): number // XXX property modifier_state doesn' seem to work
 };
-type ClutterCanvas = Connectable & {
+export type ClutterCanvas = Connectable & {
 	invalidate(): void
 	set_size(w: number, h: number): void
 }
 
-interface CairoModule {
+export interface CairoModule {
 	Operator: {
 		CLEAR: CairoOperator
 	}
 };
-interface CairoContext {
+export interface CairoContext {
 	fill(): void
 	stroke(): void
 	clip(): void
@@ -78,25 +82,25 @@ interface CairoContext {
 }
 
 
-interface Grey {
+export interface Grey {
 	luminance: number
 	alpha: number
 }
-interface Color {
+export interface Color {
 	r: number
 	g: number
 	b: number
 	a: number
 }
 
-const enum MouseMode {
+export const enum MouseMode {
 	MENU,
 	RESIZE,
 	MOVE,
 	NOOP
 }
 
-const enum Anchor {
+export const enum Anchor {
 	LEFT = 0,
 	TOPLEFT,
 	TOP,
@@ -107,14 +111,14 @@ const enum Anchor {
 	BOTTOMLEFT,
 }
 
-const enum Direction {
+export const enum Direction {
 	LEFT = 0,
 	UP,
 	RIGHT,
 	DOWN,
 }
 
-const enum Axis {
+export const enum Axis {
 	x = 'x',
 	y = 'y'
 }

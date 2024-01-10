@@ -1,4 +1,8 @@
-module Manipulations {
+import { Axis } from './common.js'
+import { Point } from './point.js'
+import { Rect } from './rect.js';
+
+export module Manipulations {
 	const RESIZE_SENSITIVITY = 0.1;
 	const MOVE_SENSITIVITY = 0.1;
 	const EDGE_AFFINITY = 30; // px

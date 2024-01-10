@@ -1,8 +1,13 @@
-/// <reference path="common.ts" />
-/// <reference path="assert.ts" />
-/// <reference path="menu.ts" />
-/// <reference path="system.ts" />
-/// <reference path="actions.ts" />
+import { log, assert } from './common.js'
+import {
+	ClutterModule, ClutterEventResponse, ClutterGrab,
+	CairoModule, CairoOperator,
+	Actor,
+} from './common.js'
+import { WindowActions } from './actions.js'
+import { Point } from './point.js'
+import { System } from './system.js'
+import { Menu } from './menu.js'
 
 module Wrapper {
 	function makeGetters(obj: any) {
@@ -121,6 +126,6 @@ class Extension<Win> {
 	}
 }
 
-function makeExtension(system: any) {
+export function makeExtension(system: any) {
 	return new Extension(Wrapper.toSystem(system));
 }

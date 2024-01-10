@@ -1,8 +1,8 @@
-/// <reference path="common.ts" />
-/// <reference path="point.ts" />
-/// <reference path="math.ts" />
+import { Axis, Anchor } from "./common.js";
+import { MathUtil } from './math.js'
+import { Point } from "./point.js";
 
-module Rect {
+export module Rect {
 	export function copy(r: Rect): Rect {
 		return { pos: Point.copy(r.pos), size: Point.copy(r.size) };
 	}
@@ -115,4 +115,9 @@ module Rect {
 			return null;
 		}
 	}
+}
+
+export interface Rect {
+	pos: Point
+	size: Point
 }

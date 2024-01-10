@@ -1,17 +1,11 @@
-/// <reference path="common.ts" />
-/// <reference path="gnome_shell.ts" />
+import '@girs/gnome-shell/ambient'
+import Gio from 'gi://Gio'
+import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js'
 
-module Settings {
-	var Gio = imports.gi.Gio;
-	var ExtensionUtils = imports.misc.extensionUtils;
-	var Ext = ExtensionUtils.getCurrentExtension();
-
+export module Settings {
 	var SCHEMA_ROOT = 'org.gnome.shell.extensions.net.gfxmonk.slinger';
 	var KEYBINDINGS = SCHEMA_ROOT + '.keybindings';
-
-	type Gsettings = {
-		list_keys(): Array<String>
-	}
+	var Ext = Extension.lookupByURL('shellshape@gfxmonk.net')
 
 	function get_local_gsettings(schema_path: string) {
 		var GioSSS = Gio.SettingsSchemaSource;
@@ -34,7 +28,7 @@ module Settings {
 	};
 
 	export class Keybindings {
-		settings: Gsettings;
+		settings: Gio.Settings;
 
 		constructor() {
 			this.settings = get_local_gsettings(KEYBINDINGS);

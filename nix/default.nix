@@ -4,7 +4,7 @@ stdenv.mkDerivation {
 	src = null; # TODO
 	buildInputs = [ gup glib ] ++ (
 		with nodePackages;
-		[typescript] ++ (if enableTests then [mocha] else [])
+		[typescript yarn] ++ (if enableTests then [mocha] else [])
 	);
 	buildPhase = ''
 		gup compile

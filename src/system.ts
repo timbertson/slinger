@@ -1,8 +1,10 @@
-/// <reference path="common.ts" />
-
 // implemented by gnome_shell.ts and cocoa injected object
 
-interface System<WindowType> {
+import { Actor, ClutterGrab, ClutterModule, CairoModule, ClutterCanvas, ClutterColor } from "./common.js"
+import { Point } from "./point.js"
+import { Rect } from "./rect.js"
+
+export interface System<WindowType> {
 	// workspace
 	workspaceArea(win: WindowType): Point
 	currentWindow(): WindowType

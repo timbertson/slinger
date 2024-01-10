@@ -1,11 +1,8 @@
-/// <reference path="rect.ts" />
-
 declare var require: any;
 declare var describe: any;
 declare var it: any;
 
-
-var assert = require('assert');
+import { assert } from '../src/assert';
 
 describe('Rect', function() {
 	it('intersects', function() {

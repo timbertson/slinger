@@ -1,108 +1,131 @@
-var autoImport = (function() {
-    var GLib = imports.gi.GLib;
-    var Gio = imports.gi.Gio;
-    var ENABLED = (GLib.getenv("GJS_AUTOIMPORT") == "1");
-    function myLog(msg) {
-        log('[gjs-autoimport] ' + msg);
-    }
-    function importAbsolute(path) {
-        myLog("importing " + path);
-        var oldSearchPath = imports.searchPath.slice();
+import '@girs/gnome-shell/ambient';
+import Main from "resource:///org/gnome/shell/ui/main.js";
+import Shell from 'gi://Shell';
+import Meta from 'gi://Meta';
+import Clutter from 'gi://Clutter';
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { p } from './common.js';
+import { Menu } from './menu.js';
+import { GnomeSystem, global } from './gnome_shell.js';
+import { Settings } from './extension_settings.js';
+import { WindowActions } from './actions.js';
+import { Point } from './point.js';
+function failsafe(fn, desc) {
+    return function () {
         try {
-            imports.searchPath = ["/"];
-            return imports[path.slice(1)];
+            if (desc)
+                p("Running: " + desc);
+            fn.apply(this, arguments);
         }
-        finally {
-            imports.searchPath = oldSearchPath;
+        catch (e) {
+            p('Error: ' + e);
+        }
+    };
+}
+export default class Slinger extends Extension {
+    disable_actions;
+    menu;
+    init_keybindings() {
+        p("initializing keybindings");
+        const self = this;
+        var gsettings = new Settings.Keybindings().settings;
+        var valid_keys = gsettings.list_keys();
+        // Utility method that binds a callback to a named keypress-action.
+        function handle(name, func) {
+            if (valid_keys.indexOf(name) === -1) {
+                // paranoia prevents a gnome shell crash
+                throw (new Error("invalid key binding: " + name));
+            }
+            var flags = Meta.KeyBindingFlags.NONE;
+            p("binding key " + name);
+            var added = Main.wm.addKeybinding(name, gsettings, flags, Shell.ActionMode.NORMAL, failsafe(func, name));
+            if (!added) {
+                throw (new Error("failed to add keybinding handler for: " + name));
+            }
+            self.disable_actions.push(function () {
+                p("unbinding key " + name);
+                Main.wm.removeKeybinding(name);
+            });
+        }
+        ;
+        const windowActions = WindowActions.Make(GnomeSystem);
+        p("adding keyboard handlers for slinger");
+        handle('slinger-show', this.show_ui.bind(this));
+        handle('slinger-next-window', windowActions.selectWindow(1));
+        handle('slinger-prev-window', windowActions.selectWindow(-1));
+        handle('slinger-swap-next-window', windowActions.swapWindow(1));
+        handle('slinger-swap-prev-window', windowActions.swapWindow(-1));
+        handle('slinger-swap-largest-window', windowActions.swapLargestWindow());
+        handle('slinger-move-right', windowActions.moveAction(1, "x" /* Axis.x */));
+        handle('slinger-move-left', windowActions.moveAction(-1, "x" /* Axis.x */));
+        handle('slinger-move-up', windowActions.moveAction(-1, "y" /* Axis.y */));
+        handle('slinger-move-down', windowActions.moveAction(1, "y" /* Axis.y */));
+        handle('slinger-grow-horizontal', windowActions.resizeAction(1, "x" /* Axis.x */));
+        handle('slinger-shrink-horizontal', windowActions.resizeAction(-1, "x" /* Axis.x */));
+        handle('slinger-grow-vertical', windowActions.resizeAction(1, "y" /* Axis.y */));
+        handle('slinger-shrink-vertical', windowActions.resizeAction(-1, "y" /* Axis.y */));
+        handle('slinger-grow', windowActions.resizeAction(1, null));
+        handle('slinger-shrink', windowActions.resizeAction(-1, null));
+        handle('slinger-switch-workspace-up', windowActions.switchWorkspace(-1));
+        handle('slinger-switch-workspace-down', windowActions.switchWorkspace(1));
+        handle('slinger-move-window-workspace-up', windowActions.moveWindowWorkspace(-1));
+        handle('slinger-move-window-workspace-down', windowActions.moveWindowWorkspace(1));
+        handle('slinger-toggle-maximize', windowActions.toggleMaximize);
+        handle('slinger-minimize-window', windowActions.minimize);
+        handle('slinger-unminimize-window', windowActions.unminimize);
+        handle('slinger-distribute', windowActions.distribute);
+        handle('slinger-fill-available-space', windowActions.fillAvailableSpace);
+    }
+    show_ui() {
+        this.hide_ui();
+        const window = GnomeSystem.currentWindow();
+        const self = this;
+        const mousePosArray = global.get_pointer();
+        const mousePos = { x: mousePosArray[0], y: mousePosArray[1] };
+        const workspaceOffset = GnomeSystem.workspaceOffset(window);
+        p("mouse position: " + JSON.stringify(mousePos));
+        p("workspace offset: " + JSON.stringify(workspaceOffset));
+        this.menu = Menu.Menu.show(GnomeSystem, global.window_group, Point.subtract(mousePos, workspaceOffset), window);
+        if (!this.menu) {
+            return Clutter.EVENT_PROPAGATE;
+        }
+        this.menu.ui.set_position(workspaceOffset.x, workspaceOffset.y);
+        this.menu.ui.connect('unrealize', function () {
+            p("hiding modal");
+            GnomeSystem.setWindowHidden(window, false);
+            self.menu = null;
+            return Clutter.EVENT_PROPAGATE;
+        });
+        return Clutter.EVENT_STOP;
+    }
+    hide_ui() {
+        if (this.menu) {
+            this.menu.destroy();
+            this.menu = null;
         }
     }
-    function makeImporter(basePath, scope, moduleName) {
-        var initial = importAbsolute(basePath + "/" + moduleName);
-        var impl = function () {
-            // first time round, just return `initial`. But replace `impl` so that next time
-            // we'll do a full reimport
-            impl = function () {
-                var canonicalPath = initial.__file__;
-                var tempPath = GLib.get_tmp_dir();
-                var temp = Gio.File.new_for_path(tempPath).get_child('gjs-autoimport');
-                if (!temp.query_exists(null)) {
-                    myLog("creating " + temp.get_path());
-                    temp.make_directory(null);
-                }
-                var genName = (function () {
-                    var i = 0;
-                    return function (base) {
-                        i++;
-                        return base + '@' + scope + '-' + i;
-                    };
-                })();
-                // only do initial setup once
-                impl = function () {
-                    var candidate = genName(moduleName);
-                    var candidateFilename = candidate + ".js";
-                    // myLog("Checking candidate file: " + candidate);
-                    var candidateFile = temp.get_child(candidateFilename);
-                    if (candidateFile.query_exists(null)) {
-                        GLib.unlink(candidateFile.get_path());
-                        // myLog("Removing existing: " + candidate);
-                    }
-                    candidateFile.make_symbolic_link(canonicalPath, null);
-                    return importAbsolute(temp.get_child(candidate).get_path());
-                };
-                return impl();
-            };
-            return initial;
-        };
-        return function () {
-            return impl();
-        };
+    enable() {
+        const self = this;
+        failsafe(function () {
+            self.disable_actions = [];
+            self.init_keybindings();
+            p("enabled");
+        })();
     }
-    function wrapExtension(getExtension, scope) {
-        if (!ENABLED) {
-            myLog("Note: set GJS_AUTOIMPORT to \"1\" to enable reimports.");
-            return getExtension().init();
-        }
-        var currentInstance = null;
-        var notify = function () {
-            notify = function () {
+    disable() {
+        const self = this;
+        failsafe(function () {
+            self.hide_ui();
+            self.disable_actions.forEach(function (fn) {
                 try {
-                    imports.ui.main.notify('Extension ' + scope + ' reloaded from disk');
+                    fn();
                 }
                 catch (e) {
-                    myLog("notify failed");
+                    p('ERROR: ' + e);
                 }
-            };
-        };
-        return {
-            enable: function () {
-                currentInstance = getExtension().init();
-                currentInstance.enable();
-                notify();
-            },
-            disable: function () {
-                if (currentInstance !== null) {
-                    currentInstance.disable();
-                    currentInstance = null;
-                }
-            }
-        };
+            });
+            self.disable_actions = [];
+            p("disabled");
+        })();
     }
-    function wrapExtensionModule(extension, name) {
-        if (!name) name = 'extension_impl';
-        var basePath = extension.path;
-        var scope = extension.uuid;
-        var getExtension = makeImporter(basePath, scope, name);
-        return wrapExtension(getExtension, scope);
-    }
-
-    return {
-        makeImporter: makeImporter,
-        wrapExtension: wrapExtension,
-        wrapExtensionModule: wrapExtensionModule
-    }
-})();
-
-function init() {
-    var self = imports.misc.extensionUtils.getCurrentExtension();
-    return autoImport.wrapExtensionModule(self);
 }
