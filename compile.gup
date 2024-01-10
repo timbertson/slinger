@@ -1,4 +1,5 @@
 #!bash -eu
 gup -u schemas/all \
 	extension/all \
+	bundle/cocoa_impl.js \
 	;

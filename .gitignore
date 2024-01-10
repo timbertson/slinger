@@ -4,3 +4,5 @@ gschemas.compiled
 nix/local.tgz.gup
 slinger.zip
 .gup
+node_modules/
+/bundle/cocoa_impl.js

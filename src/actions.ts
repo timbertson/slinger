@@ -1,4 +1,4 @@
-import { Axis, log, p, assert } from './common.js'
+import { Axis, p, assert } from './common.js'
 import { Rect } from './rect.js';
 import { Point } from './point.js';
 import { System } from './system.js'

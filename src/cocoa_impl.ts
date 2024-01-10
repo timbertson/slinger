@@ -1,4 +1,4 @@
-import { log, assert } from './common.js'
+import { assert } from './common.js'
 import {
 	ClutterModule, ClutterEventResponse, ClutterGrab,
 	CairoModule, CairoOperator,
@@ -126,6 +126,7 @@ class Extension<Win> {
 	}
 }
 
-export function makeExtension(system: any) {
+// expose as global property, entrypoint for JSCore
+(window as any).makeExtension = function(system: any) {
 	return new Extension(Wrapper.toSystem(system));
 }
