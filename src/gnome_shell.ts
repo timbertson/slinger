@@ -1,10 +1,9 @@
+/// <reference types="@girs/cairo-1.0/ambient"/>
 import GLib from 'gi://GLib'
 import Meta from 'gi://Meta'
 import ClutterImpl from 'gi://Clutter'
-
-import '@girs/cairo-1.0/ambient'
 import CairoImpl from 'gi://cairo'
-import Main from "resource:///org/gnome/shell/ui/main.js"
+import * as Main from "resource:///org/gnome/shell/ui/main.js"
 
 import { CairoModule, ClutterCanvas, ClutterColor, ClutterGrab, ClutterModule } from "./common.js"
 import { Actor } from "./common.js"
@@ -41,7 +40,9 @@ export type Global = {
 	get_pointer: () => MutterPoint
 }
 
-export declare var global: Global;
+declare global {
+	var global: Global;
+}
 
 export type MetaWorkspace = {
 	get_work_area_for_monitor(i: number): MetaRect
@@ -91,7 +92,9 @@ export module GnomeSystem {
 		return new ClutterImpl.Canvas() as unknown as ClutterCanvas;
 	}
 	export function newClutterColor(components: { red: number, green: number, blue: number, alpha: number}): ClutterColor {
-		return new ClutterImpl.Color(components.red, components.green, components.blue, components.alpha) as unknown as ClutterColor;
+		// generated types are wrong, it takes obj with { red, gren, blue} props not separate args
+		const Color = ClutterImpl.Color as any
+		return new Color(components) as unknown as ClutterColor
 	}
 
 	export function numWorkspaces(): number {

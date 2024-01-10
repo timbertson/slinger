@@ -1,8 +1,9 @@
 declare var require: any;
 declare var describe: any;
 declare var it: any;
+declare var assert: any;
 
-import { assert } from '../src/assert';
+import { Rect } from './rect.js';
 
 describe('Rect', function() {
 	it('intersects', function() {

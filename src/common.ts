@@ -1,4 +1,8 @@
-export declare var log: {(m: any):void};
+declare global {
+	var log: {(m: any):void};
+}
+
+export var log = window.log
 
 export function p(msg: String) {
 	log('[slinger]:' + msg);

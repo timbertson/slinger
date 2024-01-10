@@ -1,4 +1,12 @@
-import { Actor } from './common.js'
+import ClutterImpl from 'gi://Clutter'
+import CairoImpl from 'gi://cairo'
+
+import { Actor, CairoModule, ClutterGrab, ClutterModule, ClutterMouseEvent } from './common.js'
+import { GnomeSystem, MetaWindow } from './gnome_shell.js';
+import { Menu } from './menu.js';
+import { Point } from './point.js';
+import { Rect } from './rect.js';
+import { System } from './system.js';
 
 type ActorExt = Actor & {
 	get_position(): Array<number>;
@@ -9,8 +17,9 @@ class ClutterSystem implements System<ActorExt> {
 	private stage: ActorExt
 	private win: ActorExt
 
-	Clutter = imports.gi.Clutter
-	Cairo = imports.cairo
+	// TODO
+	Clutter = ClutterImpl as unknown as ClutterModule
+	Cairo = CairoImpl as unknown as CairoModule
 
 	newClutterActor = GnomeSystem.newClutterActor;
 	newClutterCanvas = GnomeSystem.newClutterCanvas;
@@ -69,15 +78,15 @@ class ClutterSystem implements System<ActorExt> {
 	popModal(_: ClutterGrab): void {}
 }
 
-module ClutterTest {
-	const Clutter = imports.gi.Clutter;
-	Clutter.init(null);
-	let stage = new Clutter.Stage();
-	stage.connect("destroy", function() { Clutter.main_quit() });
+export module ClutterTest {
+	const Clutter: ClutterModule = ClutterImpl as unknown as ClutterModule;
+	ClutterImpl.init(null);
+	let stage = new ClutterImpl.Stage();
+	stage.connect("destroy", function() { ClutterImpl.main_quit() });
 	stage.title = "Test";
 
-	const win = new Clutter.Actor();
-	const Sys: System<ActorExt> = new ClutterSystem(stage, win);
+	const win = new ClutterImpl.Actor() as unknown as Actor;
+	const Sys: System<ActorExt> = new ClutterSystem(stage as unknown as Actor, win);
 	win.set_size(200, 200);
 	win.set_position(50, 50);
 	win.set_background_color(Sys.newClutterColor({

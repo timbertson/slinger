@@ -1,13 +1,13 @@
-import '@girs/gnome-shell/ambient'
+/// <reference types="@girs/gnome-shell/ambient"/>
 import Gio from 'gi://Gio'
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js'
 
 export module Settings {
 	var SCHEMA_ROOT = 'org.gnome.shell.extensions.net.gfxmonk.slinger';
 	var KEYBINDINGS = SCHEMA_ROOT + '.keybindings';
-	var Ext = Extension.lookupByURL('shellshape@gfxmonk.net')
 
 	function get_local_gsettings(schema_path: string) {
+		var Ext = Extension.lookupByURL(import.meta.url)
 		var GioSSS = Gio.SettingsSchemaSource;
 
 		var schemaDir = Ext.dir.get_child('schemas');

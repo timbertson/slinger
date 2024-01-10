@@ -1,5 +1,5 @@
-import '@girs/gnome-shell/ambient'
-import Main from "resource:///org/gnome/shell/ui/main.js"
+/// <reference types="@girs/gnome-shell/ambient"/>
+import * as Main from "resource:///org/gnome/shell/ui/main.js"
 import Shell from 'gi://Shell'
 import Meta from 'gi://Meta'
 import Clutter from 'gi://Clutter';
@@ -7,19 +7,19 @@ import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import { Actor, Axis, p } from './common.js'
 import { Menu } from './menu.js'
-import { GnomeSystem, MetaWindow, global } from './gnome_shell.js'
+import { GnomeSystem, MetaWindow } from './gnome_shell.js'
 import { Settings } from './extension_settings.js'
 import { WindowActions } from './actions.js';
 import { Point } from './point.js';
 
 function failsafe(fn: Function, desc?: string) {
 	return function(this: any) {
-		try {
+		// try {
 			if (desc) p("Running: " + desc);
 			fn.apply(this, arguments)
-		} catch(e) {
-			p('Error: ' + e);
-		}
+		// } catch(e) {
+			// p('Error: ' + e);
+		// }
 	}
 }
 

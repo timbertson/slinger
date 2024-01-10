@@ -1,25 +1,24 @@
-import '@girs/gnome-shell/ambient';
-import Main from "resource:///org/gnome/shell/ui/main.js";
+/// <reference types="@girs/gnome-shell/ambient"/>
+import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import Shell from 'gi://Shell';
 import Meta from 'gi://Meta';
 import Clutter from 'gi://Clutter';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import { p } from './common.js';
 import { Menu } from './menu.js';
-import { GnomeSystem, global } from './gnome_shell.js';
+import { GnomeSystem } from './gnome_shell.js';
 import { Settings } from './extension_settings.js';
 import { WindowActions } from './actions.js';
 import { Point } from './point.js';
 function failsafe(fn, desc) {
     return function () {
-        try {
-            if (desc)
-                p("Running: " + desc);
-            fn.apply(this, arguments);
-        }
-        catch (e) {
-            p('Error: ' + e);
-        }
+        // try {
+        if (desc)
+            p("Running: " + desc);
+        fn.apply(this, arguments);
+        // } catch(e) {
+        // p('Error: ' + e);
+        // }
     };
 }
 export default class Slinger extends Extension {
