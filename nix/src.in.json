@@ -1,6 +1,0 @@
-{
-	"type": "fetchFromGitHub",
-	"repo": "slinger",
-	"owner": "timbertson",
-	"rev": "version-{version}"
-}
