@@ -1,4 +1,4 @@
-{ lib, callPackage, stdenv, nodePackages, yarn-berry, gup, glib, enableTests ? false }:
+{ lib, callPackage, stdenv, nodePackages, gup, glib, enableTests ? false }:
 let
 	sources = callPackage ./sources.nix {};
 	fetlock = callPackage (sources.fetlock) {};
@@ -15,6 +15,10 @@ let
 						dest=$out/share/gnome-shell/extensions
 						mkdir -p $dest
 						cp -r --dereference extension $dest/slinger@gfxmonk.net
+						
+						bundle_dest=$out/share/bundle
+						mkdir -p $bundle_dest
+						cp -r bundle/*.js $bundle_dest/
 					'';
 				});
 			})
