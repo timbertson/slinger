@@ -1,4 +1,4 @@
 #!bash -eu
 # jscore doesn't support modules, so we make a bundle
 gup -u ../extension/all
-../node_modules/.bin/esbuild ../extension/cocoa_impl.js --bundle --outfile="$1"
+esbuild ../extension/cocoa_impl.js --bundle --outfile="$1"
