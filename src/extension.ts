@@ -30,8 +30,8 @@ export default class Slinger extends Extension {
 	private init_keybindings() {
 		p("initializing keybindings");
 		const self = this;
-		var gsettings = new Settings.Keybindings().settings;
-		var valid_keys = gsettings.list_keys();
+		const gsettings = new Settings.Keybindings(this).settings;
+		const valid_keys = gsettings.list_keys();
 
 		// Utility method that binds a callback to a named keypress-action.
 		function handle(name: string, func: Function) {
@@ -39,11 +39,11 @@ export default class Slinger extends Extension {
 				// paranoia prevents a gnome shell crash
 				throw(new Error("invalid key binding: " + name));
 			}
-			var flags = Meta.KeyBindingFlags.NONE;
+			const flags = Meta.KeyBindingFlags.NONE;
 
 			p("binding key " + name);
 
-			var added = Main.wm.addKeybinding(
+			const added = Main.wm.addKeybinding(
 				name,
 				gsettings,
 				flags,

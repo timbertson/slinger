@@ -216,12 +216,13 @@ export module Preview {
 		}
 
 		onMouseMove(mode: MouseMode, point: Point) {
+			let diff;
 			switch (mode) {
 				case MouseMode.RESIZE:
 					if (this.resizeCorner === null) {
 						return;
 					}
-					var diff = Point.subtract(point, this.trackingOrigin);
+					diff = Point.subtract(point, this.trackingOrigin);
 					this.preview = LayoutPreview.applyResize(this.resizeCorner, diff, this.base, this.size);
 					// p('move diff ' + JSON.stringify(diff)
 					// 	+ ' (from origin ' + JSON.stringify(this.trackingOrigin) + ')'
@@ -231,7 +232,7 @@ export module Preview {
 				break;
 
 				case MouseMode.MOVE:
-					var diff = Point.subtract(point, this.trackingOrigin);
+					diff = Point.subtract(point, this.trackingOrigin);
 					this.preview = LayoutPreview.applyMove(diff, this.base, this.size);
 					// p('move diff ' + JSON.stringify(diff)
 					// 	+ ' (from origin ' + JSON.stringify(this.trackingOrigin) + ')'

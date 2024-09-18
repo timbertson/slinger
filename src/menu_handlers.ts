@@ -114,7 +114,7 @@ export module MenuHandlers {
 				cr.paint();
 				cr.restore();
 
-				// log("drawing! (radius = " + OUTER_RADIUS + ", selection = " + JSON.stringify(self.selection) + ")"); cr.save();
+				// console.log("drawing! (radius = " + OUTER_RADIUS + ", selection = " + JSON.stringify(self.selection) + ")"); cr.save();
 				// border (/backing fill)
 				cr.arc(HALF.x, HALF.y, OUTER_RADIUS + BORDER_WIDTH, 0, TAO);
 				setGrey(cr, BG);
@@ -266,9 +266,9 @@ export module MenuHandlers {
 			const { x, y } = this.currentMouseRelative;
 			const radius = Math.sqrt(Math.pow(x,2) + Math.pow(y,2));
 			const angle = Math.atan2(y, x);
-			// log("radius = " + radius);
-			// log("angle = " + angle);a
-			var selection;
+			// console.log("radius = " + radius);
+			// console.log("angle = " + angle);a
+			let selection;
 			if (radius <= this.INNER_RADIUS) {
 				selection = MenuSelection.None(splitMode);
 			} else if (radius < this.MID_RADIUS) {

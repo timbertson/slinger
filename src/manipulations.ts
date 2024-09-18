@@ -101,9 +101,9 @@ export module Manipulations {
 
 	export function largestFreeRect(workArea: Point, windows: Array<Rect>, minArea: number): Rect | null {
 		let freeWindowAreas = windows.map(win => freeRectsAround(workArea, win));
-		// log("freeWindowAreas = " + JSON.stringify(freeWindowAreas));
+		// console.log("freeWindowAreas = " + JSON.stringify(freeWindowAreas));
 
-		var largest: RectAndArea = null;
+		let largest: RectAndArea = null;
 		function worthPursuing(candidate: RectAndArea) {
 			if (candidate == null || candidate.area < minArea) return false;
 			return largest == null || candidate.area > largest.area;
@@ -111,7 +111,7 @@ export module Manipulations {
 
 		// pick one free rect per window
 		function recurse(rect: RectAndArea, remaining: Array<Array<RectAndArea>>) {
-			// log("recursing over rect " + JSON.stringify(rect) + ", with " + remaining.length + " windows remaining");
+			// console.log("recursing over rect " + JSON.stringify(rect) + ", with " + remaining.length + " windows remaining");
 			if (remaining.length == 0) {
 				// we've picked one free rect from each window, and the intersection is nonzero
 				if (worthPursuing(rect)) {
@@ -125,7 +125,7 @@ export module Manipulations {
 
 			nextSet.forEach(function(candidate) {
 				let intersection = rect.intersection(candidate);
-				// log("intersection of " + JSON.stringify(rect) + " and " + JSON.stringify(candidate) + " = " + JSON.stringify(intersection));
+				// console.log("intersection of " + JSON.stringify(rect) + " and " + JSON.stringify(candidate) + " = " + JSON.stringify(intersection));
 				if (worthPursuing(intersection)) {
 					// valid intersection which isn't already smaller than our largest candidate, keep going
 					recurse(intersection, nextRemaining);

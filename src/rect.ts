@@ -25,9 +25,9 @@ export module Rect {
 		const br = sqrt(pow(p.x -  far.x, 2) + pow(p.y -  far.y, 2));
 		const bl = sqrt(pow(p.x - near.x, 2) + pow(p.y -  far.y, 2));
 		const corners = [tl, tr, bl, br];
-		// log("Closest corners: " + JSON.stringify(corners));
+		// console.log("Closest corners: " + JSON.stringify(corners));
 		corners.sort(function(a,b) { return a - b });
-		// log("Closest corners (sorted): " + JSON.stringify(corners));
+		// console.log("Closest corners (sorted): " + JSON.stringify(corners));
 		const min = corners[0];
 		if (min == tl) return Anchor.TOPLEFT;
 		if (min == tr) return Anchor.TOPRIGHT;

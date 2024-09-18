@@ -1,9 +1,5 @@
-declare global {
-	var log: {(m: any):void};
-}
-
 export function p(msg: String) {
-	log('[slinger]:' + msg);
+	console.log('[slinger]:' + msg);
 }
 export function dump(obj: any) {
 	p(JSON.stringify(obj));
@@ -17,10 +13,10 @@ export function assert<T>(x: T, msg?: string):T {
 }
 
 // opaque types (cannot be directly implemented)
-export interface CairoOperator { __CairoOperator: null };
-export interface ClutterEventResponse { __ClutterEventResponse: null };
-export interface ClutterColor { __ClutterColor: null };
-export interface ClutterGrab { __ClutterGrab: null };
+export interface CairoOperator { __CairoOperator: null }
+export interface ClutterEventResponse { __ClutterEventResponse: null }
+export interface ClutterColor { __ClutterColor: null }
+export interface ClutterGrab { __ClutterGrab: null }
 
 export type Actor = Connectable & {
 	set_position(x: number, y: number): void
@@ -35,7 +31,7 @@ export type Actor = Connectable & {
 	grab_key_focus(): void
 	hide(): void
 	show(): void
-};
+}
 
 export interface ClutterModule {
 	EVENT_STOP: ClutterEventResponse
@@ -43,7 +39,7 @@ export interface ClutterModule {
 	ModifierType: {
 		SHIFT_MASK: number
 	}
-};
+}
 
 export interface Connectable {
 	connect(signal: String, handler: Function): void
@@ -51,11 +47,11 @@ export interface Connectable {
 
 export interface ClutterMouseEvent {
 	get_coords(): Array<number>
-};
+}
 export interface ClutterKeyEvent {
 	get_key_code(): number
 	get_state(): number // XXX property modifier_state doesn' seem to work
-};
+}
 export type ClutterCanvas = Connectable & {
 	invalidate(): void
 	set_size(w: number, h: number): void
@@ -65,7 +61,7 @@ export interface CairoModule {
 	Operator: {
 		CLEAR: CairoOperator
 	}
-};
+}
 export interface CairoContext {
 	fill(): void
 	stroke(): void

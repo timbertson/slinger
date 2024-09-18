@@ -107,7 +107,7 @@ export module WindowActions {
 			const half_pi = Math.PI / 2;
 			const tao = Math.PI * 2;
 
-			var angle;
+			let angle;
 			if (Point.eqTo(vector, 0, 0)) {
 				angle = -half_pi;
 			} else {
@@ -187,7 +187,7 @@ export module WindowActions {
 				})
 			);
 
-			var windowIdx = -1;
+			let windowIdx = -1;
 			for (let i=0; i<windows.length; i++) {
 				if(windows[i].win === win) {
 					windowIdx = i;
@@ -249,15 +249,15 @@ export module WindowActions {
 		}
 
 		function fillAvailableSpace() {
-			log("fillAvailableSpace()");
+			console.log("fillAvailableSpace()");
 			const [win, visibleWindows] = Sys.visibleWindows();
 			if (win === null) return;
 			const workArea = Sys.workspaceArea(win);
 			const MIN_AREA = Math.min(workArea.x, workArea.y) * 20;
 			const otherWindows = visibleWindows.filter(candidate => candidate !== win);
-			log("otherWindows.length = " + otherWindows.length);
+			console.log("otherWindows.length = " + otherWindows.length);
 			const newRect = Manipulations.largestFreeRect(workArea, otherWindows.map(Sys.windowRect), MIN_AREA);
-			log("fillAvailableSpace(): found rect " + JSON.stringify(newRect));
+			console.log("fillAvailableSpace(): found rect " + JSON.stringify(newRect));
 			if (newRect !== null) {
 				Sys.moveResize(win, newRect);
 				Sys.activateLater(win);

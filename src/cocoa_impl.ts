@@ -13,7 +13,7 @@ module Wrapper {
 	function makeGetters(obj: any) {
 		function stubFn(name: string) {
 			return function() {
-				log("WARN: stub implementation for `" + name + "` called");
+				console.log("WARN: stub implementation for `" + name + "` called");
 			}
 		}
 
@@ -22,7 +22,7 @@ module Wrapper {
 			// TODO: strict mode
 			// assert(p, "no such property: System["+name+"]");
 			if (!p) {
-				log("WARN: missing property: `" + name + "`");
+				console.log("WARN: missing property: `" + name + "`");
 				return dfl;
 			}
 			return p;
