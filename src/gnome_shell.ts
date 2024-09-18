@@ -81,6 +81,7 @@ export interface MetaWindow {
 
 
 export module GnomeSystem {
+	let activateLaterTimeout: number|null = null;
 	export const Clutter: ClutterModule = ClutterImpl as unknown as ClutterModule
 	export const Cairo: CairoModule = CairoImpl as unknown as CairoModule
 
@@ -234,10 +235,18 @@ export module GnomeSystem {
 	}
 
 	export function activateLater(win: MetaWindow): void {
-		GLib.timeout_add(GLib.PRIORITY_DEFAULT, 10, function() {
+		activateLaterTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 10, function() {
+			activateLaterTimeout = null;
 			Main.activateWindow(win, global.get_current_time());
 			return false;
 		});
+	}
+
+	export function removePendingEvents(): void {
+		if (activateLaterTimeout != null) {
+			GLib.Source.remove(activateLaterTimeout);
+			activateLaterTimeout = null;
+		}
 	}
 
 	export function setWindowHidden(win: MetaWindow, hidden: boolean) {

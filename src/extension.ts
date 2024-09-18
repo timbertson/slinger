@@ -159,6 +159,7 @@ export default class Slinger extends Extension {
 				}
 			});
 			self.disable_actions = [];
+			GnomeSystem.removePendingEvents();
 			p("disabled");
 		})();
 	}
