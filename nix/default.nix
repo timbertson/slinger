@@ -1,4 +1,4 @@
-{ lib, callPackage, stdenv, nodePackages, gup, glib, enableTests ? false }:
+{ lib, callPackage, stdenv, typescript, gup, glib, enableTests ? false }:
 let
 	sources = callPackage ./sources.nix {};
 	fetlock = callPackage (sources.fetlock) {};
@@ -7,7 +7,7 @@ let
 		pkgOverrides = self: [
 			(self.overrideAttrs {
 				slinger = (o: {
-					buildInputs = o.buildInputs ++ [ gup glib nodePackages.typescript ];
+					buildInputs = o.buildInputs ++ [ gup glib typescript ];
 					buildPhase = o.buildPhase + ''
 						gup compile
 					'';
